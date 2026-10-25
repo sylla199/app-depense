@@ -1,9 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import Papa from "papaparse";
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
+import { IconChevronLeft, IconChevronDown } from "@/components/ui/Icons";
 import { restant as calcRestant, totalAffecte, type LineLike } from "@/lib/calculations";
 import { COLUMN_GUESSES, guessColumn, parseMontant } from "@/lib/csvImport";
 import { formatFcfa } from "@/lib/format";
@@ -36,7 +38,6 @@ export function ImportWizard({ existing }: { existing: ExistingState }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [step, setStep] = useState<Step>("upload");
   const [fileError, setFileError] = useState<string | null>(null);
-  const [fileName, setFileName] = useState("");
   const [headers, setHeaders] = useState<string[]>([]);
   const [rawRows, setRawRows] = useState<string[][]>([]);
   const [colCategorie, setColCategorie] = useState("");
@@ -62,7 +63,6 @@ export function ImportWizard({ existing }: { existing: ExistingState }) {
       const [headerRow, ...dataRows] = rows;
       setHeaders(headerRow);
       setRawRows(dataRows);
-      setFileName(file.name);
 
       const guessCat = guessColumn(headerRow, COLUMN_GUESSES.categorie);
       const guessLib = guessColumn(headerRow, COLUMN_GUESSES.libelle);
@@ -156,17 +156,16 @@ export function ImportWizard({ existing }: { existing: ExistingState }) {
     setFileError(null);
     setHeaders([]);
     setRawRows([]);
-    setFileName("");
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
   if (done) {
     return (
-      <div className="card card-lg" style={{ textAlign: "center" }}>
-        <div className="celebrate" role="status" style={{ justifyContent: "center", marginBottom: 16 }}>
+      <div className="card stack" style={{ padding: "var(--space-6)", textAlign: "center", alignItems: "center" }}>
+        <div className="celebrate" role="status">
           🎉 Import terminé
         </div>
-        <p style={{ marginBottom: 16 }}>
+        <p style={{ margin: 0 }}>
           {preview.linesNew} lignes ajoutées{preview.categoriesNew > 0 ? `, ${preview.categoriesNew} nouvelle(s) catégorie(s)` : ""}.
         </p>
         <Button onClick={() => router.push("/mois")}>Voir mon mois</Button>
@@ -174,61 +173,66 @@ export function ImportWizard({ existing }: { existing: ExistingState }) {
     );
   }
 
+  const stepNumber = step === "upload" ? 1 : step === "mapping" ? 2 : 3;
+
   return (
-    <div>
-      <p className="caption" style={{ marginBottom: 4 }}>
-        Étape {step === "upload" ? 1 : step === "mapping" ? 2 : 3} sur 3
-      </p>
-      <div className="meter" style={{ marginBottom: 24 }}>
-        <span style={{ width: `${step === "upload" ? 33 : step === "mapping" ? 66 : 100}%` }} />
+    <div className="stack" style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)", maxWidth: 760 }}>
+      <div className="screen-head">
+        <Link href="/reglages" className="back">
+          <IconChevronLeft />
+          Réglages
+        </Link>
+        <div className="step-dots" aria-label={`Étape ${stepNumber} sur 3`}>
+          <span className={stepNumber >= 1 ? "on" : ""} />
+          <span className={stepNumber >= 2 ? "on" : ""} />
+          <span className={stepNumber >= 3 ? "on" : ""} />
+        </div>
+      </div>
+      <div className="stack" style={{ gap: "var(--space-2)" }}>
+        <h1 className="screen-title" style={{ margin: 0 }}>
+          Importer mon tableur
+        </h1>
+        <p className="muted" style={{ margin: 0 }}>
+          Dépose ton fichier CSV : on associe les colonnes et les catégories, puis tu valides
+          avant que ton mois soit créé.
+        </p>
       </div>
 
       {step === "upload" ? (
-        <div className="card card-lg">
-          <h1 className="t-md" style={{ marginTop: 0 }}>
-            Dépose ton fichier CSV
-          </h1>
-          <p className="caption" style={{ marginBottom: 16 }}>
-            Exporte ton tableur actuel en CSV (pas en Excel), puis dépose-le ici.
-          </p>
-
+        <section className="card stack" style={{ padding: "var(--space-6)", gap: "var(--space-4)" }}>
           {fileError ? (
-            <div role="alert" style={{ marginBottom: 16 }}>
-              <p className="field-error" style={{ marginBottom: 8 }}>
-                <span aria-hidden="true">!</span> Ce fichier n&apos;a pas pu être lu
-              </p>
-              <ul className="caption" style={{ margin: "0 0 12px", paddingLeft: 20 }}>
-                <li>Le fichier doit être au format CSV, pas Excel.</li>
+            <div className="card stack" role="alert" style={{ gap: "var(--space-3)", background: "var(--surface-2)" }}>
+              <div className="row-title t-over">Ce fichier n&apos;a pas pu être lu</div>
+              <ul className="caption" style={{ margin: 0, paddingLeft: "var(--space-6)", display: "flex", flexDirection: "column", gap: "var(--space-1)" }}>
+                <li>Le format doit être CSV (pas Excel .xlsx).</li>
                 <li>La première ligne doit contenir les titres des colonnes.</li>
-                <li>Au moins une colonne de montants doit être présente.</li>
+                <li>Il faut au moins une colonne de montants.</li>
               </ul>
-              <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-                <Button variant="secondary" size="sm" onClick={() => fileInputRef.current?.click()}>
+              <div className="wrap">
+                <Button size="sm" onClick={() => fileInputRef.current?.click()}>
                   Choisir un autre fichier
                 </Button>
-                <a href="/exemple-import.csv" download className="btn btn-ghost btn-sm">
+                <a href="/exemple-import.csv" download className="btn btn-secondary btn-sm">
                   Voir un exemple de fichier
                 </a>
               </div>
             </div>
           ) : (
             <div
+              className="dropzone"
               onDragOver={(e) => e.preventDefault()}
               onDrop={(e) => {
                 e.preventDefault();
                 const file = e.dataTransfer.files[0];
                 if (file) onFile(file);
               }}
-              style={{
-                border: "2px dashed var(--line-strong)",
-                borderRadius: "var(--radius-lg)",
-                padding: 32,
-                textAlign: "center",
-                marginBottom: 16,
-              }}
             >
-              <p style={{ marginBottom: 12 }}>Glisse ton fichier ici, ou</p>
-              <Button variant="secondary" onClick={() => fileInputRef.current?.click()}>
+              <svg className="ico" viewBox="0 0 24 24" aria-hidden="true" style={{ width: 32, height: 32, color: "var(--accent)" }}>
+                <path d="M12 15V4M7 9l5-5 5 5M5 20h14" />
+              </svg>
+              <div className="row-title">Dépose ton fichier ici</div>
+              <div className="caption">Format CSV. Rien n&apos;est créé avant ta validation.</div>
+              <Button size="sm" onClick={() => fileInputRef.current?.click()}>
                 Choisir un fichier
               </Button>
             </div>
@@ -244,117 +248,89 @@ export function ImportWizard({ existing }: { existing: ExistingState }) {
               if (file) onFile(file);
             }}
           />
-
-          <a href="/exemple-import.csv" download className="caption" style={{ color: "var(--accent)" }}>
-            Voir un exemple de fichier
-          </a>
-        </div>
+        </section>
       ) : null}
 
       {step === "mapping" ? (
-        <div className="card card-lg">
-          <h1 className="t-md" style={{ marginTop: 0 }}>
-            Associe les colonnes
-          </h1>
-          <p className="caption" style={{ marginBottom: 16 }}>
-            {fileName} · {rawRows.length} lignes détectées
-          </p>
-
-          <div className="stack" style={{ display: "flex", flexDirection: "column", gap: 16, marginBottom: 16 }}>
-            {[
-              { label: "Catégorie", value: colCategorie, set: setColCategorie },
-              { label: "Libellé", value: colLibelle, set: setColLibelle },
-              { label: "Montant", value: colMontant, set: setColMontant },
-            ].map((field) => (
-              <div className="field-box" key={field.label}>
-                <label className="label" htmlFor={`col-${field.label}`}>
-                  {field.label}
-                </label>
-                <select
-                  id={`col-${field.label}`}
-                  className="input"
-                  value={field.value}
-                  onChange={(e) => field.set(e.target.value)}
-                >
-                  {headers.map((h) => (
-                    <option key={h} value={h}>
-                      {h}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            ))}
+        <section className="card stack" style={{ padding: "var(--space-6)", gap: "var(--space-2)" }}>
+          <div className="label">Associer les colonnes</div>
+          {[
+            { label: "Catégorie", value: colCategorie, set: setColCategorie },
+            { label: "Libellé", value: colLibelle, set: setColLibelle },
+            { label: "Montant", value: colMontant, set: setColMontant },
+          ].map((field) => (
+            <div className="map-row" key={field.label}>
+              <select
+                className="csv-cell"
+                style={{ border: 0, font: "inherit", width: "100%" }}
+                aria-label={`Colonne du fichier pour ${field.label}`}
+                value={field.value}
+                onChange={(e) => field.set(e.target.value)}
+              >
+                {headers.map((h) => (
+                  <option key={h} value={h}>
+                    {h}
+                  </option>
+                ))}
+              </select>
+              <IconChevronDown style={{ transform: "rotate(-90deg)" }} />
+              <span className="tag tag-accent" style={{ justifySelf: "start" }}>
+                {field.label === "Libellé" ? "Nom de la ligne" : field.label}
+              </span>
+            </div>
+          ))}
+          <div className="caption" style={{ marginTop: "var(--space-2)" }}>
+            Exemple de ligne lue : {rawRows[0]?.[idx.categorie]} · {rawRows[0]?.[idx.libelle]} ·{" "}
+            {rawRows[0]?.[idx.montant]}
           </div>
-
-          <div className="card" style={{ background: "var(--surface-2)", marginBottom: 16 }}>
-            <p className="label" style={{ marginBottom: 8 }}>
-              Aperçu
-            </p>
-            {rawRows.slice(0, 3).map((row, i) => (
-              <p key={i} className="caption" style={{ margin: "4px 0" }}>
-                {row[idx.categorie]} · {row[idx.libelle]} · {row[idx.montant]}
-              </p>
-            ))}
-          </div>
-
-          <div style={{ display: "flex", gap: 12 }}>
-            <Button variant="secondary" onClick={reset}>
+          <div className="wrap" style={{ marginTop: "var(--space-4)" }}>
+            <Button variant="secondary" size="sm" onClick={reset}>
               Recommencer
             </Button>
-            <Button block onClick={() => setStep("review")}>
+            <Button size="sm" onClick={() => setStep("review")}>
               Continuer
             </Button>
           </div>
-        </div>
+        </section>
       ) : null}
 
       {step === "review" ? (
-        <div className="card card-lg">
-          <h1 className="t-md" style={{ marginTop: 0 }}>
-            Vérifie avant de créer
-          </h1>
+        <section className="card stack" style={{ padding: "var(--space-6)", gap: "var(--space-4)" }}>
+          <div className="label">Ce qui sera créé</div>
+          <div className="t-lg">{formatFcfa(existing.revenu)}</div>
+          <div className="caption">
+            {preview.categoriesTotal} catégories ({preview.categoriesNew} nouvelle
+            {preview.categoriesNew !== 1 ? "s" : ""}) · {preview.linesTotal} lignes · le restant du
+            mois vaut {formatFcfa(preview.restant)}
+          </div>
 
           {submitError ? (
-            <p role="alert" className="field-error" style={{ marginBottom: 12 }}>
+            <p role="alert" className="field-error">
               {submitError}
             </p>
           ) : null}
 
-          <div className="stack" style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
-            <p style={{ margin: 0 }}>
-              <strong>{preview.categoriesTotal}</strong> catégories
-              {preview.categoriesNew > 0 ? ` (${preview.categoriesNew} nouvelle${preview.categoriesNew > 1 ? "s" : ""})` : ""}
-            </p>
-            <p style={{ margin: 0 }}>
-              <strong>{preview.linesTotal}</strong> lignes ({preview.linesNew} ajoutées par l&apos;import)
-            </p>
-            <p style={{ margin: 0 }}>
-              Restant après import :{" "}
-              <strong className={preview.restant < 0 ? "field-error" : ""}>{formatFcfa(preview.restant)}</strong>
-            </p>
-          </div>
-
           {skippedRows.length > 0 ? (
-            <div className="card" style={{ background: "var(--surface-2)", marginBottom: 16 }}>
-              <p style={{ margin: "0 0 4px" }}>
-                <strong>{skippedRows.length}</strong> {skippedRows.length > 1 ? "lignes ignorées" : "ligne ignorée"}
-              </p>
-              <p className="caption" style={{ margin: 0 }}>
-                Ligne{skippedRows.length > 1 ? "s" : ""} {skippedRows.map((s) => s.rowNumber).join(", ")} : montant
-                ou catégorie manquant ou illisible. Tu pourras les ajouter à la main après.
-              </p>
+            <div className="card stack" role="status" style={{ gap: "var(--space-2)", background: "var(--surface-2)" }}>
+              <div className="row-title t-warn">
+                {skippedRows.length} {skippedRows.length > 1 ? "lignes ignorées" : "ligne ignorée"}
+              </div>
+              <div className="caption">
+                Ligne{skippedRows.length > 1 ? "s" : ""} {skippedRows.map((s) => s.rowNumber).join(", ")} :
+                montant ou catégorie manquant ou illisible. Tu pourras les ajouter à la main après.
+              </div>
             </div>
           ) : null}
 
-          <div style={{ display: "flex", gap: 12 }}>
-            <Button variant="secondary" onClick={() => setStep("mapping")}>
-              Retour
+          <div className="wrap">
+            <Button onClick={onValidate} disabled={submitting || validRows.length === 0}>
+              {submitting ? "…" : "Créer mon mois"}
             </Button>
-            <Button block onClick={onValidate} disabled={submitting || validRows.length === 0}>
-              {submitting ? "…" : "Créer mes lignes"}
+            <Button variant="ghost" onClick={reset}>
+              Recommencer
             </Button>
           </div>
-        </div>
+        </section>
       ) : null}
     </div>
   );

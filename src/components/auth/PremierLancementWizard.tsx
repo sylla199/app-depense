@@ -1,11 +1,11 @@
 "use client";
 
+import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useMemo, useState, type CSSProperties } from "react";
+import { Fragment, useState, type CSSProperties } from "react";
 import { Button } from "@/components/ui/Button";
-import { Field } from "@/components/ui/Field";
 import { montantProposeCategorie } from "@/lib/calculations";
-import { formatFcfa } from "@/lib/format";
+import { formatFcfa, formatMontant } from "@/lib/format";
 
 interface CategoryOption {
   id: string;
@@ -14,40 +14,30 @@ interface CategoryOption {
   defaultPercent: number;
 }
 
+function digitsOnly(raw: string): number {
+  const v = raw.replace(/\D/g, "").slice(0, 9);
+  return v ? parseInt(v, 10) : 0;
+}
+
 /**
- * Parcours guidé en 3 étapes (F10, Must) : revenu du mois, répartition type
- * (informative, ajustable ensuite ligne par ligne dans l'app), première
- * ligne de dépense. Objectif du cahier des charges : moins de 5 minutes
- * sans documentation.
+ * Parcours guidé en 3 étapes (F10, Must) — fidèle à `Onboarding.dc.html` :
+ * revenu du mois, répartition type (informative, ajustable ensuite ligne
+ * par ligne dans l'app), première ligne de dépense. Objectif du cahier des
+ * charges : moins de 5 minutes sans documentation.
  */
 export function PremierLancementWizard({ categories }: { categories: CategoryOption[] }) {
   const router = useRouter();
   const [step, setStep] = useState(1);
-  const [revenu, setRevenu] = useState(880000);
-  const [percents, setPercents] = useState<Record<string, number>>(() =>
-    Object.fromEntries(categories.map((c) => [c.id, c.defaultPercent]))
-  );
+  const [revenu, setRevenu] = useState(0);
   const [ligneName, setLigneName] = useState("");
-  const [lignePlanned, setLignePlanned] = useState<number | "">("");
+  const [lignePlanned, setLignePlanned] = useState(0);
   const [ligneCategoryId, setLigneCategoryId] = useState(categories[0]?.id ?? "");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
 
-  const totalPercent = useMemo(
-    () => Object.values(percents).reduce((sum, p) => sum + p, 0),
-    [percents]
-  );
-
-  const totalMessage =
-    totalPercent === 100
-      ? "Total : 100 %. Chaque franc est affecté."
-      : totalPercent < 100
-        ? `Il reste ${100 - totalPercent} % à répartir.`
-        : `Tu dépasses de ${totalPercent - 100} %.`;
-
   async function onFinish() {
     setErrors({});
-    if (typeof lignePlanned !== "number" || lignePlanned <= 0) {
+    if (lignePlanned <= 0) {
       setErrors({ planned: "Entre un montant supérieur à 0." });
       return;
     }
@@ -77,135 +67,182 @@ export function PremierLancementWizard({ categories }: { categories: CategoryOpt
   }
 
   return (
-    <div className="card card-lg" style={{ maxWidth: 480, margin: "48px auto" }}>
-      <p className="caption" style={{ marginBottom: 4 }}>
-        Étape {step} sur 3
-      </p>
-      <div className="meter" style={{ marginBottom: 24 }}>
-        <span style={{ width: `${(step / 3) * 100}%` }} />
-      </div>
-
-      {step === 1 ? (
-        <>
-          <h1 className="t-md" style={{ marginTop: 0 }}>
-            Quel est ton revenu ce mois-ci ?
-          </h1>
-          <Field
-            label="Revenu du mois"
-            type="number"
-            inputMode="numeric"
-            amount
-            value={revenu}
-            onChange={(e) => setRevenu(Number(e.target.value) || 0)}
-          />
-          <Button block onClick={() => setStep(2)} style={{ marginTop: 16 }}>
-            Continuer
-          </Button>
-        </>
-      ) : null}
-
-      {step === 2 ? (
-        <>
-          <h1 className="t-md" style={{ marginTop: 0 }}>
-            Comment veux-tu le répartir ?
-          </h1>
-          <p className="caption">Une proposition de départ — tu ajusteras ligne par ligne ensuite.</p>
-          <div className="stack" style={{ display: "flex", flexDirection: "column", gap: 12, margin: "16px 0" }}>
-            {categories.map((c) => (
-              <div key={c.id} className="field" style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <span className="dot" style={{ "--c": `var(--${c.color})` } as CSSProperties} />
-                <span style={{ flex: 1 }}>{c.name}</span>
-                <input
-                  type="number"
-                  className="input"
-                  style={{ width: 72, textAlign: "right" }}
-                  value={percents[c.id] ?? 0}
-                  onChange={(e) =>
-                    setPercents((prev) => ({ ...prev, [c.id]: Number(e.target.value) || 0 }))
-                  }
-                  aria-label={`Pourcentage pour ${c.name}`}
-                />
-                <span className="caption" style={{ width: 16 }}>%</span>
-                <span className="row-amount" style={{ width: 110, textAlign: "right" }}>
-                  {formatFcfa(montantProposeCategorie(revenu, percents[c.id] ?? 0))}
-                </span>
-              </div>
-            ))}
+    <div className="onb">
+      <div className="onb-card">
+        <div className="screen-head">
+          <div className="topnav-brand">
+            <Image src="/icons/icon-48.png" alt="" width={32} height={32} />
+            Dépenses
           </div>
-          <p
-            className="caption"
-            role="status"
-            aria-live="polite"
-            style={{ color: totalPercent > 100 ? "var(--over)" : undefined }}
-          >
-            {totalMessage}
-          </p>
-          <div style={{ display: "flex", gap: 12, marginTop: 16 }}>
-            <Button variant="secondary" onClick={() => setStep(1)}>
-              Retour
-            </Button>
-            <Button block onClick={() => setStep(3)}>
+          <div className="step-dots" role="img" aria-label={`Étape ${step} sur 3`}>
+            <span className="on" />
+            <span className={step >= 2 ? "on" : ""} />
+            <span className={step >= 3 ? "on" : ""} />
+          </div>
+        </div>
+
+        {step === 1 ? (
+          <section className="stack" style={{ gap: "var(--space-6)" }}>
+            <div className="stack" style={{ gap: "var(--space-2)" }}>
+              <div className="label">Étape 1 sur 3</div>
+              <h1 className="screen-title" style={{ margin: 0, fontSize: 24, lineHeight: "32px" }}>
+                Quel est ton revenu du mois ?
+              </h1>
+              <p className="muted" style={{ margin: 0 }}>
+                Salaire et autres revenus. Tu pourras ajouter d&apos;autres sources plus tard.
+              </p>
+            </div>
+            <div className="amount-field">
+              <label className="sr" htmlFor="rev">
+                Revenu du mois en FCFA
+              </label>
+              <input
+                id="rev"
+                className="t-xl"
+                type="text"
+                inputMode="numeric"
+                autoComplete="off"
+                placeholder="0"
+                value={revenu ? formatMontant(revenu) : ""}
+                onChange={(e) => setRevenu(digitsOnly(e.target.value))}
+              />
+              <span className="t-md muted">FCFA</span>
+            </div>
+            <Button block onClick={() => setStep(2)} disabled={revenu === 0}>
               Continuer
             </Button>
-          </div>
-        </>
-      ) : null}
+          </section>
+        ) : null}
 
-      {step === 3 ? (
-        <>
-          <h1 className="t-md" style={{ marginTop: 0 }}>
-            Ajoute ta première ligne
-          </h1>
-          {errors._global ? (
-            <p role="alert" className="field-error">
-              {errors._global}
-            </p>
-          ) : null}
-          <div className="stack" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            <Field
-              label="Nom"
-              value={ligneName}
-              onChange={(e) => setLigneName(e.target.value)}
-              error={errors.name}
-              placeholder="Ex. Internet"
-            />
-            <Field
-              label="Montant prévu"
-              type="number"
-              inputMode="numeric"
-              amount
-              value={lignePlanned}
-              onChange={(e) => setLignePlanned(e.target.value === "" ? "" : Number(e.target.value))}
-              error={errors.planned}
-            />
-            <div className="field-box">
-              <label className="label" htmlFor="categorie-premiere-ligne">
-                Catégorie
-              </label>
-              <select
-                id="categorie-premiere-ligne"
-                className="input"
-                value={ligneCategoryId}
-                onChange={(e) => setLigneCategoryId(e.target.value)}
+        {step === 2 ? (
+          <section className="stack" style={{ gap: "var(--space-6)" }}>
+            <div className="stack" style={{ gap: "var(--space-2)" }}>
+              <div className="label">Étape 2 sur 3</div>
+              <h1 className="screen-title" style={{ margin: 0, fontSize: 24, lineHeight: "32px" }}>
+                Répartis ton revenu
+              </h1>
+              <p className="muted" style={{ margin: 0 }}>
+                Voici une répartition type. Tu ajustes chaque montant ensuite, ligne par ligne.
+              </p>
+            </div>
+            <div className="card stack" style={{ gap: "var(--space-4)" }}>
+              <div
+                className="seg"
+                role="img"
+                aria-label={`Répartition : ${categories.map((c) => `${c.defaultPercent} % ${c.name.toLowerCase()}`).join(", ")}`}
               >
                 {categories.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
+                  <span key={c.id} style={{ width: `${c.defaultPercent}%`, "--c": `var(--${c.color})` } as CSSProperties} />
                 ))}
-              </select>
+              </div>
+              <div className="legend">
+                {categories.map((c) => (
+                  <Fragment key={c.id}>
+                    <span className="dot" style={{ "--c": `var(--${c.color})` } as CSSProperties} />
+                    <span>
+                      {c.name} · {c.defaultPercent} %
+                    </span>
+                    <span className="row-amount">{formatFcfa(montantProposeCategorie(revenu, c.defaultPercent))}</span>
+                  </Fragment>
+                ))}
+              </div>
             </div>
-          </div>
-          <div style={{ display: "flex", gap: 12, marginTop: 16 }}>
-            <Button variant="secondary" onClick={() => setStep(2)}>
-              Retour
-            </Button>
-            <Button block onClick={onFinish} disabled={submitting}>
-              {submitting ? "…" : "Créer mon premier mois"}
-            </Button>
-          </div>
-        </>
-      ) : null}
+            <div className="wrap" style={{ flexWrap: "nowrap" }}>
+              <Button variant="secondary" onClick={() => setStep(1)}>
+                Retour
+              </Button>
+              <Button style={{ flex: 1 }} onClick={() => setStep(3)}>
+                Continuer
+              </Button>
+            </div>
+          </section>
+        ) : null}
+
+        {step === 3 ? (
+          <section className="stack" style={{ gap: "var(--space-6)" }}>
+            <div className="stack" style={{ gap: "var(--space-2)" }}>
+              <div className="label">Étape 3 sur 3</div>
+              <h1 className="screen-title" style={{ margin: 0, fontSize: 24, lineHeight: "32px" }}>
+                Ajoute ta première ligne
+              </h1>
+              <p className="muted" style={{ margin: 0 }}>
+                Une dépense, un montant, une catégorie. Les totaux se mettent à jour tout seuls.
+              </p>
+            </div>
+            <div className="card stack" style={{ gap: "var(--space-4)" }}>
+              {errors._global ? (
+                <p role="alert" className="field-error">
+                  {errors._global}
+                </p>
+              ) : null}
+              <div className="field-box">
+                <label className="label" htmlFor="nom">
+                  Nom
+                </label>
+                <input
+                  id="nom"
+                  className="input"
+                  type="text"
+                  placeholder="Ex. Internet"
+                  value={ligneName}
+                  onChange={(e) => setLigneName(e.target.value)}
+                />
+                {errors.name ? (
+                  <div className="field-error" role="alert">
+                    {errors.name}
+                  </div>
+                ) : null}
+              </div>
+              <div className="field-box">
+                <label className="label" htmlFor="mt">
+                  Montant, en FCFA
+                </label>
+                <input
+                  id="mt"
+                  className="input input-amount"
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="0"
+                  value={lignePlanned ? formatMontant(lignePlanned) : ""}
+                  onChange={(e) => setLignePlanned(digitsOnly(e.target.value))}
+                />
+                {errors.planned ? (
+                  <div className="field-error" role="alert">
+                    {errors.planned}
+                  </div>
+                ) : null}
+              </div>
+              <div className="field-box">
+                <span className="label" id="cl">
+                  Catégorie
+                </span>
+                <div className="wrap" role="group" aria-labelledby="cl">
+                  {categories.map((c) => (
+                    <button
+                      key={c.id}
+                      type="button"
+                      className="chip"
+                      aria-pressed={ligneCategoryId === c.id}
+                      onClick={() => setLigneCategoryId(c.id)}
+                    >
+                      <span className="dot" style={{ "--c": `var(--${c.color})` } as CSSProperties} />
+                      {c.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="wrap" style={{ flexWrap: "nowrap" }}>
+              <Button variant="secondary" onClick={() => setStep(2)}>
+                Retour
+              </Button>
+              <Button style={{ flex: 1 }} onClick={onFinish} disabled={submitting}>
+                {submitting ? "…" : "Voir mon mois"}
+              </Button>
+            </div>
+          </section>
+        ) : null}
+      </div>
     </div>
   );
 }

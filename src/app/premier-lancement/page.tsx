@@ -16,7 +16,7 @@ export default async function PremierLancementPage() {
   });
 
   return (
-    <main id="contenu" style={{ padding: 16 }}>
+    <main id="contenu">
       <PremierLancementWizard
         categories={categories.map((c) => ({
           id: c.id,

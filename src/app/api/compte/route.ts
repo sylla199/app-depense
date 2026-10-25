@@ -28,18 +28,27 @@ export async function PATCH(request: Request) {
 }
 
 /**
- * Suppression définitive du compte (F8, Must — RGPD). Toutes les données
- * liées sont supprimées en cascade (`onDelete: Cascade` sur chaque relation
- * du schéma Prisma), sans confirmation supplémentaire côté serveur : c'est
- * la boîte de dialogue côté client ("Supprimer définitivement") qui porte
- * la confirmation, irréversible.
+ * Suppression définitive du compte (F8, Must — RGPD), sans confirmation
+ * supplémentaire côté serveur : c'est la boîte de dialogue côté client
+ * ("Supprimer définitivement") qui porte la confirmation, irréversible.
+ *
+ * `Line.categoryId` n'a volontairement pas de cascade (suppression d'une
+ * catégorie → réaffectation obligatoire, voir `/api/categories/[id]`), donc
+ * un simple `db.user.delete()` échoue dès qu'un utilisateur a des lignes :
+ * SQLite cascade `User → Category` avant d'avoir supprimé les `Line` qui la
+ * référencent encore, et la contrainte de clé étrangère bloque la
+ * suppression. On supprime donc explicitement, dans l'ordre des
+ * dépendances, avant de supprimer l'utilisateur.
  */
 export async function DELETE() {
   const auth = await requireUserId();
   if (auth instanceof NextResponse) return auth;
   const { userId } = auth;
 
-  await db.user.delete({ where: { id: userId } });
+  await db.$transaction(async (tx) => {
+    await tx.line.deleteMany({ where: { month: { userId } } });
+    await tx.user.delete({ where: { id: userId } });
+  });
   await destroySessionCookie();
   return NextResponse.json({ ok: true });
 }

@@ -1,12 +1,13 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
-import { Field } from "@/components/ui/Field";
 import { Switch } from "@/components/ui/Switch";
+import { IconChevronLeft, IconPlus, IconTrash } from "@/components/ui/Icons";
 import { revenuDuMois } from "@/lib/calculations";
-import { formatFcfa } from "@/lib/format";
+import { formatFcfa, formatMontant } from "@/lib/format";
 
 interface Source {
   id: string;
@@ -15,16 +16,35 @@ interface Source {
   carryOver: boolean;
 }
 
+function digitsOnly(raw: string): number {
+  const v = raw.replace(/\D/g, "").slice(0, 9);
+  return v ? parseInt(v, 10) : 0;
+}
+
+/** Sources de revenu — fidèle à `Revenus.dc.html`. */
 export function RevenusManager({ sources }: { sources: Source[] }) {
   const router = useRouter();
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState("");
-  const [amount, setAmount] = useState<number | "">("");
-  const [carryOver, setCarryOver] = useState(true);
+  const [amount, setAmount] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const total = revenuDuMois(sources);
+
+  async function patchSource(id: string, data: Record<string, unknown>) {
+    await fetch(`/api/revenus/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    router.refresh();
+  }
+
+  async function onDelete(id: string) {
+    await fetch(`/api/revenus/${id}`, { method: "DELETE" });
+    router.refresh();
+  }
 
   async function onAdd() {
     setError(null);
@@ -32,7 +52,7 @@ export function RevenusManager({ sources }: { sources: Source[] }) {
       setError("Ce champ est obligatoire.");
       return;
     }
-    if (typeof amount !== "number" || amount <= 0) {
+    if (amount <= 0) {
       setError("Entre un montant supérieur à 0.");
       return;
     }
@@ -41,7 +61,7 @@ export function RevenusManager({ sources }: { sources: Source[] }) {
       const res = await fetch("/api/revenus", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, amount, carryOver }),
+        body: JSON.stringify({ name, amount, carryOver: true }),
       });
       if (!res.ok) {
         const data = await res.json();
@@ -49,7 +69,7 @@ export function RevenusManager({ sources }: { sources: Source[] }) {
         return;
       }
       setName("");
-      setAmount("");
+      setAmount(0);
       setAdding(false);
       router.refresh();
     } finally {
@@ -57,80 +77,149 @@ export function RevenusManager({ sources }: { sources: Source[] }) {
     }
   }
 
-  async function onDelete(id: string) {
-    await fetch(`/api/revenus/${id}`, { method: "DELETE" });
-    router.refresh();
-  }
-
   return (
-    <div>
-      <h1 className="t-lg" style={{ marginBottom: 4 }}>
-        Revenus
-      </h1>
-      <p className="caption" style={{ marginBottom: 16 }}>
-        Revenu du mois : <strong className="amount">{formatFcfa(total)}</strong>
-      </p>
-
-      <div className="card">
-        {sources.length === 0 ? (
-          <p className="caption">Ajoute ta première source de revenu.</p>
-        ) : (
-          sources.map((s) => (
-            <div key={s.id} className="row">
-              <div className="row-main">
-                <p className="row-title" style={{ margin: 0 }}>
-                  {s.name}
-                </p>
-                <p className="row-sub" style={{ margin: 0 }}>
-                  {s.carryOver ? "Reprise chaque mois" : "Ce mois seulement"}
-                </p>
-              </div>
-              <div className="row-end">
-                <span className="row-amount">{formatFcfa(s.amount)}</span>
-                <button type="button" className="btn btn-ghost btn-sm" style={{ color: "var(--over)" }} onClick={() => onDelete(s.id)}>
-                  Retirer
-                </button>
-              </div>
-            </div>
-          ))
-        )}
+    <div className="stack" style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
+      <div className="screen-head">
+        <Link href="/reglages" className="back">
+          <IconChevronLeft />
+          Réglages
+        </Link>
+      </div>
+      <div className="screen-head">
+        <h1 className="screen-title">Sources de revenu</h1>
+        <div className="head-actions">
+          {!adding ? (
+            <Button size="sm" onClick={() => setAdding(true)}>
+              <IconPlus />
+              Ajouter une source
+            </Button>
+          ) : null}
+        </div>
       </div>
 
-      <div style={{ marginTop: 16 }}>
-        {adding ? (
-          <div className="card stack" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {error ? (
-              <p role="alert" className="field-error">
-                {error}
+      <div className="cols-main">
+        <div className="stack" style={{ gap: "var(--space-6)" }}>
+          {sources.length === 0 ? (
+            <section className="card" style={{ padding: "var(--space-6)" }}>
+              <p className="caption" style={{ margin: 0 }}>
+                Ajoute ta première source de revenu.
               </p>
-            ) : null}
-            <Field label="Nom de la source" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex. Salaire" />
-            <Field
-              label="Montant"
-              type="number"
-              inputMode="numeric"
-              amount
-              value={amount}
-              onChange={(e) => setAmount(e.target.value === "" ? "" : Number(e.target.value))}
-            />
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <span>Reprendre chaque mois</span>
-              <Switch checked={carryOver} onChange={setCarryOver} label="Reprendre chaque mois" />
-            </div>
-            <div style={{ display: "flex", gap: 12 }}>
-              <Button variant="secondary" onClick={() => setAdding(false)}>
-                Annuler
-              </Button>
-              <Button block onClick={onAdd} disabled={submitting}>
-                Ajouter
-              </Button>
-            </div>
+            </section>
+          ) : (
+            sources.map((s) => (
+              <section key={s.id} className="card stack" style={{ padding: "var(--space-6)", gap: "var(--space-4)" }}>
+                <div className="field-box">
+                  <label className="label" htmlFor={`src-name-${s.id}`}>
+                    Source
+                  </label>
+                  <input
+                    id={`src-name-${s.id}`}
+                    className="input"
+                    type="text"
+                    defaultValue={s.name}
+                    onBlur={(e) => e.target.value.trim() && e.target.value !== s.name && patchSource(s.id, { name: e.target.value })}
+                  />
+                </div>
+                <div className="field-box">
+                  <label className="label" htmlFor={`src-amt-${s.id}`}>
+                    Montant du mois, en FCFA
+                  </label>
+                  <input
+                    id={`src-amt-${s.id}`}
+                    className="input input-amount"
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="off"
+                    defaultValue={s.amount ? formatMontant(s.amount) : ""}
+                    onBlur={(e) => patchSource(s.id, { amount: digitsOnly(e.target.value) })}
+                  />
+                </div>
+                <div className="field">
+                  <div className="row-main">
+                    <div>Reprendre chaque mois</div>
+                    <div className="caption">Tu peux modifier le montant à tout moment.</div>
+                  </div>
+                  <Switch
+                    checked={s.carryOver}
+                    onChange={(next) => patchSource(s.id, { carryOver: next })}
+                    label="Reprendre cette source chaque mois"
+                  />
+                </div>
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  style={{ alignSelf: "flex-start", color: "var(--over)" }}
+                  onClick={() => onDelete(s.id)}
+                >
+                  <IconTrash />
+                  Retirer cette source
+                </button>
+              </section>
+            ))
+          )}
+
+          {adding ? (
+            <form className="inline-form" onSubmit={(e) => e.preventDefault()} aria-labelledby="ns-t">
+              <h2 id="ns-t" className="screen-title" style={{ margin: 0, fontSize: 18 }}>
+                Nouvelle source de revenu
+              </h2>
+              {error ? (
+                <p role="alert" className="field-error">
+                  {error}
+                </p>
+              ) : null}
+              <div className="field-box">
+                <label className="label" htmlFor="ns-name">
+                  Nom
+                </label>
+                <input
+                  id="ns-name"
+                  className="input"
+                  type="text"
+                  placeholder="Ex. Freelance"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+              </div>
+              <div className="field-box">
+                <label className="label" htmlFor="ns-amt">
+                  Montant du mois, en FCFA
+                </label>
+                <input
+                  id="ns-amt"
+                  className="input input-amount"
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="0"
+                  value={amount ? formatMontant(amount) : ""}
+                  onChange={(e) => setAmount(digitsOnly(e.target.value))}
+                />
+              </div>
+              <div className="wrap" style={{ justifyContent: "flex-end" }}>
+                <Button variant="secondary" size="sm" type="button" onClick={() => setAdding(false)}>
+                  Annuler
+                </Button>
+                <Button size="sm" type="button" onClick={onAdd} disabled={submitting}>
+                  Ajouter
+                </Button>
+              </div>
+            </form>
+          ) : null}
+        </div>
+
+        <aside className="card stack" style={{ padding: "var(--space-6)" }}>
+          <div className="label">Revenu du mois</div>
+          <div className="t-xl" aria-live="polite">
+            {formatFcfa(total)}
           </div>
-        ) : (
-          <Button variant="secondary" onClick={() => setAdding(true)}>
-            Ajouter une source de revenu
-          </Button>
-        )}
+          <div className="caption">
+            Somme de tes sources de revenu. C&apos;est cette somme que tu répartis ensuite entre
+            tes catégories.
+          </div>
+          <Link href="/mois" className="btn btn-secondary btn-sm" style={{ alignSelf: "flex-start" }}>
+            Voir le mois
+          </Link>
+        </aside>
       </div>
     </div>
   );
