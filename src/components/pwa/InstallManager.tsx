@@ -1,17 +1,13 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { InstallGuideContent } from "@/components/pwa/InstallGuideContent";
 import { isStandalone } from "@/lib/platform";
+import { useInstallPrompt } from "@/lib/useInstallPrompt";
 
 const SEEN_KEY = "gmd-install-guide-seen";
-
-interface BeforeInstallPromptEvent extends Event {
-  prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
-}
 
 /**
  * Affiche le guide d'installation une seule fois à l'arrivée (règle du
@@ -32,19 +28,11 @@ interface BeforeInstallPromptEvent extends Event {
 export function InstallManager() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const deferredPrompt = useRef<BeforeInstallPromptEvent | null>(null);
-  const [canInstallNative, setCanInstallNative] = useState(false);
+  const { canInstallNative, promptInstall } = useInstallPrompt();
 
   useEffect(() => {
     if (pathname !== "/mois") return;
     if (isStandalone()) return; // déjà installée : rien à proposer
-
-    function onBeforeInstallPrompt(event: Event) {
-      event.preventDefault();
-      deferredPrompt.current = event as BeforeInstallPromptEvent;
-      setCanInstallNative(true);
-    }
-    window.addEventListener("beforeinstallprompt", onBeforeInstallPrompt);
 
     let seen = false;
     try {
@@ -60,10 +48,7 @@ export function InstallManager() {
       if (!seen && !document.querySelector(".scrim")) setOpen(true);
     }, 1500); // laisse une chance à beforeinstallprompt de se déclencher avant d'ouvrir
 
-    return () => {
-      window.removeEventListener("beforeinstallprompt", onBeforeInstallPrompt);
-      clearTimeout(timer);
-    };
+    return () => clearTimeout(timer);
   }, [pathname]);
 
   function close() {
@@ -74,11 +59,7 @@ export function InstallManager() {
   }
 
   async function onInstallClick() {
-    if (!deferredPrompt.current) return;
-    await deferredPrompt.current.prompt();
-    await deferredPrompt.current.userChoice;
-    deferredPrompt.current = null;
-    setCanInstallNative(false);
+    await promptInstall();
     close();
   }
 

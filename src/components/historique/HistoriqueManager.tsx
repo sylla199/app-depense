@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { IconChevronLeft, IconPlus } from "@/components/ui/Icons";
 import { ajouterMois } from "@/lib/date";
 import { formatFcfa, formatMoisEnLettres } from "@/lib/format";
 import { useOnlineStatus } from "@/lib/useOnlineStatus";
@@ -15,6 +16,7 @@ interface MonthItem {
   revenu: number;
   restant: number;
   lineCount: number;
+  current: boolean;
 }
 
 interface Badges {
@@ -24,13 +26,49 @@ interface Badges {
   serieDe3: boolean;
 }
 
-const BADGE_LABELS: Array<{ key: keyof Badges; label: string }> = [
-  { key: "moisBoucle", label: "Mois bouclé à 0" },
-  { key: "premiereEpargne", label: "Première épargne" },
-  { key: "objectifAtteint", label: "Objectif atteint" },
-  { key: "serieDe3", label: "Série de 3 mois" },
+const BADGES: Array<{ key: keyof Badges; label: string; icon: React.ReactNode }> = [
+  {
+    key: "moisBoucle",
+    label: "Mois bouclé à 0",
+    icon: (
+      <svg className="ico" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M5 12.5l4.5 4.5L19 7.5" />
+      </svg>
+    ),
+  },
+  {
+    key: "premiereEpargne",
+    label: "Première épargne",
+    icon: (
+      <svg className="ico" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z" />
+      </svg>
+    ),
+  },
+  {
+    key: "objectifAtteint",
+    label: "Objectif atteint",
+    icon: (
+      <svg className="ico" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="8" />
+        <circle cx="12" cy="12" r="4" />
+        <circle cx="12" cy="12" r=".6" />
+      </svg>
+    ),
+  },
+  {
+    key: "serieDe3",
+    label: "Série de 3 mois",
+    icon: (
+      <svg className="ico" viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="5" y="11" width="14" height="9" rx="2" />
+        <path d="M8 11V8a4 4 0 018 0v3" />
+      </svg>
+    ),
+  },
 ];
 
+/** Historique des mois — fidèle à `Historique.dc.html`. */
 export function HistoriqueManager({
   months,
   badges,
@@ -74,34 +112,41 @@ export function HistoriqueManager({
   }
 
   return (
-    <div className="stack" style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
-        <h1 className="t-lg" style={{ margin: 0 }}>
-          Historique
-        </h1>
-        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-          <Button variant="quiet" size="sm" onClick={() => router.push("/epargne")}>
+    <div className="stack" style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
+      <Link href="/mois" className="back only-mobile-block">
+        <IconChevronLeft />
+        Mois
+      </Link>
+      <div className="screen-head">
+        <h1 className="screen-title">Historique</h1>
+        <div className="head-actions">
+          <Button variant="secondary" size="sm" onClick={() => router.push("/epargne")}>
+            <svg className="ico" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M5 20V11M12 20V5M19 20v-7" />
+            </svg>
             Évolution
           </Button>
-          <Button variant="secondary" size="sm" onClick={onExport} disabled={!online}>
+          <Button variant="secondary" size="sm" onClick={onExport} disabled={!online || exported}>
+            <svg className="ico" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 4v11M7 10l5 5 5-5M5 20h14" />
+            </svg>
             {exported ? "Exporté" : "Exporter en CSV"}
           </Button>
           {prochain ? (
             <Button size="sm" onClick={onDuplicate} disabled={duplicating || !online}>
+              <IconPlus />
               Créer {formatMoisEnLettres(prochain.year, prochain.month)}
             </Button>
           ) : null}
         </div>
       </div>
-      {!online ? (
-        <p className="caption" style={{ margin: 0 }}>
-          L&apos;export et la création d&apos;un nouveau mois nécessitent une connexion.
-        </p>
-      ) : null}
 
       {exported ? (
         <div className="snackbar" role="status" style={{ position: "static" }}>
           <span>historique-depenses.csv prêt</span>
+          <span className="caption" style={{ color: "inherit" }}>
+            dans tes téléchargements
+          </span>
         </div>
       ) : null}
       {error ? (
@@ -109,6 +154,15 @@ export function HistoriqueManager({
           {error}
         </p>
       ) : null}
+      {!online ? (
+        <p className="caption" style={{ margin: 0 }}>
+          L&apos;export et la création d&apos;un nouveau mois nécessitent une connexion.
+        </p>
+      ) : null}
+
+      <p className="muted" style={{ margin: 0, maxWidth: "60ch" }}>
+        Un nouveau mois copie les lignes et les montants du mois précédent. Tu les ajustes ensuite.
+      </p>
 
       {months.length === 0 ? (
         <div className="card" style={{ textAlign: "center", padding: 48 }}>
@@ -121,50 +175,65 @@ export function HistoriqueManager({
           </Link>
         </div>
       ) : (
-        <div className="card">
-          {months.map((m) => (
-            <Link
-              key={m.id}
-              href="/mois"
-              className="row"
-              style={{ textDecoration: "none", color: "inherit" }}
-            >
-              <div className="row-main">
-                <p className="row-title" style={{ margin: 0 }}>
-                  {formatMoisEnLettres(m.year, m.month)}
-                </p>
-                <p className="row-sub" style={{ margin: 0 }}>
-                  Revenu {formatFcfa(m.revenu)} · {m.lineCount} lignes
-                </p>
+        <div className="cols-main">
+          <section className="card" style={{ padding: "var(--space-4) var(--space-4) var(--space-2)" }}>
+            {months.map((m) => (
+              <Link
+                key={m.id}
+                href="/mois"
+                className="row link-row"
+                style={{ "--c": "var(--cat-other)" } as React.CSSProperties}
+              >
+                <div className="row-icon">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <rect x="3" y="5" width="18" height="16" rx="2" />
+                    <path d="M3 10h18M8 3v4M16 3v4" />
+                  </svg>
+                </div>
+                <div className="row-main">
+                  <div className="row-title">{formatMoisEnLettres(m.year, m.month)}</div>
+                  <div className="row-sub">
+                    {m.current ? "En cours · " : ""}Revenu {formatFcfa(m.revenu)}
+                  </div>
+                </div>
+                {m.restant === 0 ? (
+                  <div className="row-end">
+                    <span className="delta">Mois bouclé</span>
+                  </div>
+                ) : (
+                  <div className="row-end">
+                    <div className={`row-amount ${m.restant > 0 ? "pos" : ""}`}>{formatFcfa(m.restant)}</div>
+                    <div className="row-sub">restant</div>
+                  </div>
+                )}
+              </Link>
+            ))}
+          </section>
+
+          <aside className="stack" style={{ gap: "var(--space-4)" }}>
+            <div className="card stack">
+              <div className="label">Ta série</div>
+              <div className="t-md">
+                {serie} {serie > 1 ? "mois bouclés d'affilée" : "mois bouclé d'affilée"}
               </div>
-              <span className={`row-amount ${m.restant === 0 ? "pos" : m.restant < 0 ? "neg" : ""}`}>
-                {m.restant === 0 ? "Mois bouclé" : formatFcfa(m.restant)}
-              </span>
-            </Link>
-          ))}
+              <div className="caption">
+                {serie < 3
+                  ? `Encore ${3 - serie} mois à 0 pour débloquer « Série de 3 mois ».`
+                  : "Série de 3 mois débloquée."}
+              </div>
+            </div>
+            <div className="features" style={{ gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "var(--space-3)" }}>
+              {BADGES.map((b) => (
+                <div key={b.key} className={`badge ${badges[b.key] ? "" : "locked"}`} aria-label={badges[b.key] ? undefined : `${b.label}, verrouillé`}>
+                  <div className="badge-icon">{b.icon}</div>
+                  <div className="badge-name">{b.label}</div>
+                  <span className="caption">{badges[b.key] ? "Débloqué" : "Verrouillé"}</span>
+                </div>
+              ))}
+            </div>
+          </aside>
         </div>
       )}
-
-      <div className="card">
-        <p className="label" style={{ marginBottom: 4 }}>
-          Ta série
-        </p>
-        <p className="t-md" style={{ margin: "0 0 12px" }}>
-          {serie} {serie > 1 ? "mois bouclés d'affilée" : "mois bouclé d'affilée"}
-        </p>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          {BADGE_LABELS.map((b) => (
-            <span
-              key={b.key}
-              className="chip"
-              aria-pressed={badges[b.key]}
-              style={{ opacity: badges[b.key] ? 1 : 0.4, cursor: "default" }}
-            >
-              {badges[b.key] ? "🏅" : "🔒"} {b.label}
-            </span>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }

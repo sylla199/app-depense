@@ -46,6 +46,7 @@ export const IconReglages = (p: IconProps) =>
   );
 
 export const IconPlus = (p: IconProps) => base(p, <path d="M12 5v14M5 12h14" />);
+export const IconShare = (p: IconProps) => base(p, <path d="M12 4v11M8 8l4-4 4 4M5 14v6h14v-6" />);
 export const IconChevronLeft = (p: IconProps) => base(p, <path d="M14 6l-6 6 6 6" />);
 export const IconChevronDown = (p: IconProps) => base(p, <path d="M6 9l6 6 6-6" />);
 export const IconClose = (p: IconProps) => base(p, <path d="M6 6l12 12M18 6L6 18" />);

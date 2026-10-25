@@ -41,6 +41,8 @@ export default async function HistoriquePage() {
       lineCount: m.lines.length,
     };
   });
+  // `months` est trié du plus récent au plus ancien : le premier est le mois en cours.
+  const itemsAvecCourant = items.map((it, i) => ({ ...it, current: i === 0 }));
 
   // Série de mois bouclés d'affilée, en partant du plus récent (les mois
   // sont déjà triés du plus récent au plus ancien).
@@ -67,7 +69,7 @@ export default async function HistoriquePage() {
 
   return (
     <HistoriqueManager
-      months={items}
+      months={itemsAvecCourant}
       badges={{
         moisBoucle: aDejaBoucle,
         premiereEpargne: aDejaEpargne,
