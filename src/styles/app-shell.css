@@ -488,3 +488,69 @@ a.month-switch:focus-visible {
   width: 100%;
   color: var(--ink);
 }
+
+/* --- Mot de passe oublié : propre au gabarit `MotDePasse.dc.html` ------- */
+.pw {
+  min-height: 844px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-8) var(--space-4);
+  box-sizing: border-box;
+  background: var(--bg-base);
+  color: var(--ink);
+  font-family: var(--font-sans);
+}
+.pw-card {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+.pw-wrap {
+  position: relative;
+}
+.pw-wrap .input {
+  padding-right: 56px;
+}
+.pw-wrap .icon-btn {
+  position: absolute;
+  right: 4px;
+  top: 4px;
+  background: transparent;
+  color: var(--ink-muted);
+}
+.rule {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--ink-muted);
+}
+.rule.ok {
+  color: var(--income);
+}
+.rule .tick {
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1.5px currentColor;
+}
+.rule.ok .tick {
+  background: var(--income);
+  box-shadow: none;
+  color: var(--bg-base);
+}
+.rule .tick .ico {
+  width: 12px;
+  height: 12px;
+  stroke-width: 3;
+  opacity: 0;
+}
+.rule.ok .tick .ico {
+  opacity: 1;
+}
