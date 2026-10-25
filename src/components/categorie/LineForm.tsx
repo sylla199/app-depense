@@ -6,6 +6,7 @@ import { Field } from "@/components/ui/Field";
 import { Switch } from "@/components/ui/Switch";
 import { ecartLigne } from "@/lib/calculations";
 import { formatFcfa } from "@/lib/format";
+import { addToQueue } from "@/lib/offlineQueue";
 
 export interface CategoryOption {
   id: string;
@@ -72,11 +73,25 @@ export function LineForm({ mode, initial, categories, defaultCategoryId, onSaved
         isFixed,
         countsInProjection,
       };
-      const res = await fetch(mode === "create" ? "/api/lignes" : `/api/lignes/${initial!.id}`, {
-        method: mode === "create" ? "POST" : "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      let res: Response;
+      try {
+        res = await fetch(mode === "create" ? "/api/lignes" : `/api/lignes/${initial!.id}`, {
+          method: mode === "create" ? "POST" : "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+      } catch {
+        // `fetch` lève (TypeError), pas une réponse HTTP : pas de réseau.
+        // Hors ligne, seul l'ajout d'une ligne est mis en file (règle du
+        // handoff — la modification exige le réseau).
+        if (mode === "create") {
+          addToQueue(payload);
+          onSaved();
+          return;
+        }
+        setErrors({ _global: "Cette action nécessite une connexion. Réessaie une fois en ligne." });
+        return;
+      }
       const data = await res.json();
       if (!res.ok) {
         setErrors(data.errors ?? { _global: "Une erreur est survenue." });

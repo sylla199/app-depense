@@ -4,6 +4,8 @@ import type { ReactNode } from "react";
 import { getSession } from "@/lib/auth";
 import { SideNav } from "@/components/nav/SideNav";
 import { TabBar } from "@/components/nav/TabBar";
+import { ServiceWorkerRegister } from "@/components/pwa/ServiceWorkerRegister";
+import { InstallManager } from "@/components/pwa/InstallManager";
 
 // L'espace client est en noindex (section "Référencement et partage" du handoff).
 export const metadata: Metadata = {
@@ -16,6 +18,8 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex min-h-full">
+      <ServiceWorkerRegister />
+      <InstallManager />
       <SideNav />
       <main
         id="contenu"

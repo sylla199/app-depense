@@ -47,6 +47,26 @@ pas le revenu actuel — **après avoir tiré ce commit, relancer `npm run dev`*
 une `PrismaClientValidationError` sur `/api/mois/dupliquer` tant qu'il n'est
 pas redémarré).
 
+**Jalon 4 construit (F9)** : PWA. Manifeste (`src/app/manifest.ts`, servi sur
+`/manifest.webmanifest`) avec les paramètres exacts du handoff (nom, couleurs,
+icônes standard + maskable) ; icônes générées par `scripts/gen-icons.js` (un
+anneau à 4 couleurs — catégories par défaut — comme logo *provisoire*, voir
+plus bas) ; service worker (`public/sw.js`, sans Workbox) qui met en cache la
+coquille de l'app et le mois courant pour une consultation hors ligne ;
+bandeau réseau sur le Mois (`NetBanner`, hors ligne / synchronisation) ;
+file d'attente locale (`localStorage`) pour les lignes ajoutées hors ligne,
+envoyées automatiquement à la prochaine visite de `/mois` en ligne ; guide
+d'installation Android/iPhone, affiché une fois à l'arrivée puis accessible
+depuis Réglages ; export/suppression de compte désormais désactivés hors
+ligne avec explication (`useOnlineStatus`).
+
+- **Icônes provisoires** : `scripts/gen-icons.js` dessine un anneau purement
+  vectoriel (4 couleurs de catégorie) — aucun vrai logo n'existe. À remplacer
+  en relançant ce script après l'avoir adapté, le jour où un logo existe.
+- **`/og-apercu.png`** (image de partage 1200×630, section PWA/SEO du
+  handoff) : toujours pas de fichier généré, `openGraph.images` reste donc
+  absent de `app/page.tsx` plutôt que de pointer vers une image qui n'existe pas.
+
 **Pas encore construits** (stubs "Bientôt" dans la navigation, pas de 404) :
 - Mode discret : le réglage est persisté (`User.discreetMode`, route `PATCH
   /api/compte`) mais rien ne masque encore les montants à l'affichage — pas
@@ -55,7 +75,6 @@ pas redémarré).
   classe CSS).
 - Thème sombre, code PIN (V2) : tokens prêts dans `tokens.css`
   (`[data-theme="dark"]`), rien ne les active dans l'UI.
-- PWA : manifeste, service worker, mode hors ligne, guide d'installation (F9).
 - Import CSV du tableur (F12).
 - Rappels (F13, V2).
 - Réinitialisation du mot de passe par e-mail (F1, Must — reporté : nécessite
@@ -63,13 +82,9 @@ pas redémarré).
 - Pages légales : le contenu de `/confidentialite` est un stub "Bientôt" ;
   **le texte légal reste à rédiger et à faire relire par un juriste** avant
   toute mise en ligne (la landing y renvoie déjà par ancre).
-- `/og-apercu.png` (image de partage 1200×630, section PWA/SEO du handoff) :
-  pas de fichier généré, la balise `openGraph.images` n'est donc pas posée
-  dans `app/page.tsx` plutôt que de pointer vers une image absente.
 
 Prochain jalon suggéré, dans l'ordre du cahier des charges (section 9) :
-PWA (manifeste, service worker, hors ligne, guide d'installation), puis
-import CSV (F12).
+import CSV (F12), seul module restant du périmètre MVP.
 
 ## Stack technique
 
@@ -164,6 +179,9 @@ src/styles/components.css              # classes de composants (.btn, .card, .ro
 src/app/(app)/                          # routes protégées (nécessitent une session)
 src/app/api/                             # mutations (POST/PATCH/DELETE) ; les lectures
                                            # se font directement dans les pages via Prisma
+src/app/manifest.ts                        # manifeste PWA (convention Next.js, sert /manifest.webmanifest)
+public/sw.js                                # service worker (coquille + mois courant en cache)
+scripts/gen-icons.js                         # régénère public/icons/* (voir État du projet)
 ```
 
 ## Conventions
@@ -210,3 +228,13 @@ src/app/api/                             # mutations (POST/PATCH/DELETE) ; les l
   l'ancien en mémoire (le module Node ne se recharge pas tout seul) et renvoie
   une `PrismaClientValidationError` ("Unknown argument ...") sur le nouveau
   champ. **Toujours redémarrer `next dev` après une migration.**
+- **Tester le mode hors ligne (service worker) : jamais en `next dev`.** Le
+  client de rechargement à chaud de Next essaie de se reconnecter en
+  WebSocket dès que le réseau tombe, et ce échec perturbe assez le runtime
+  client pour empêcher l'hydratation de se terminer normalement — le bandeau
+  réseau et la synchronisation de la file hors ligne semblent alors cassés
+  alors qu'ils fonctionnent. Vérifier avec `npm run build && npm run start`
+  (ou `PORT=3002 npm run start` pour ne pas toucher un `next dev` déjà
+  lancé) et y simuler le mode hors ligne (`context.setOffline(true)` en
+  Playwright, ou l'onglet Réseau des DevTools). C'est comme ça que ce jalon
+  a été vérifié.

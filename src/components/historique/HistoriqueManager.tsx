@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { ajouterMois } from "@/lib/date";
 import { formatFcfa, formatMoisEnLettres } from "@/lib/format";
+import { useOnlineStatus } from "@/lib/useOnlineStatus";
 
 interface MonthItem {
   id: string;
@@ -40,6 +41,7 @@ export function HistoriqueManager({
   serie: number;
 }) {
   const router = useRouter();
+  const online = useOnlineStatus();
   const [exported, setExported] = useState(false);
   const [duplicating, setDuplicating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -81,16 +83,21 @@ export function HistoriqueManager({
           <Button variant="quiet" size="sm" onClick={() => router.push("/epargne")}>
             Évolution
           </Button>
-          <Button variant="secondary" size="sm" onClick={onExport}>
+          <Button variant="secondary" size="sm" onClick={onExport} disabled={!online}>
             {exported ? "Exporté" : "Exporter en CSV"}
           </Button>
           {prochain ? (
-            <Button size="sm" onClick={onDuplicate} disabled={duplicating}>
+            <Button size="sm" onClick={onDuplicate} disabled={duplicating || !online}>
               Créer {formatMoisEnLettres(prochain.year, prochain.month)}
             </Button>
           ) : null}
         </div>
       </div>
+      {!online ? (
+        <p className="caption" style={{ margin: 0 }}>
+          L&apos;export et la création d&apos;un nouveau mois nécessitent une connexion.
+        </p>
+      ) : null}
 
       {exported ? (
         <div className="snackbar" role="status" style={{ position: "static" }}>

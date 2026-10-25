@@ -4,10 +4,12 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
+import { useOnlineStatus } from "@/lib/useOnlineStatus";
 
 /** "Mes données" (F8, Must — RGPD) : export, suppression définitive du compte. */
 export function DonneesCard() {
   const router = useRouter();
+  const online = useOnlineStatus();
   const [confirming, setConfirming] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -34,7 +36,7 @@ export function DonneesCard() {
       <p className="label" style={{ marginBottom: 12 }}>
         Mes données
       </p>
-      <Button variant="secondary" block onClick={onExport} style={{ marginBottom: 12 }}>
+      <Button variant="secondary" block onClick={onExport} disabled={!online} style={{ marginBottom: 12 }}>
         Exporter mes données
       </Button>
       <button
@@ -42,9 +44,15 @@ export function DonneesCard() {
         className="btn btn-ghost btn-block"
         style={{ color: "var(--over)" }}
         onClick={() => setConfirming(true)}
+        disabled={!online}
       >
         Supprimer mon compte
       </button>
+      {!online ? (
+        <p className="caption" style={{ marginTop: 8 }}>
+          Ces actions nécessitent une connexion.
+        </p>
+      ) : null}
 
       {confirming ? (
         <Modal title="Supprimer ton compte" onClose={() => setConfirming(false)}>

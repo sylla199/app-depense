@@ -20,13 +20,25 @@ const roboto = Roboto({
 export const metadata: Metadata = {
   title: "Gérer mes dépenses",
   description: "Budget mensuel en FCFA : revenus, catégories, épargne et projets d'achat.",
+  icons: {
+    icon: [{ url: "/icons/favicon-32.png", sizes: "32x32", type: "image/png" }],
+    apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+  },
+  appleWebApp: {
+    capable: true,
+    title: "Dépenses",
+    statusBarStyle: "black-translucent",
+  },
 };
 
 // --band-deep, couleur de thème du manifeste PWA (section "PWA, SEO, légal
 // et partage" du handoff) — fixée ici en dur plutôt que lue depuis
 // tokens.css, que le navigateur ne peut pas consulter pour la barre d'état.
+// viewportFit "cover" : nécessaire pour que env(safe-area-inset-bottom)
+// (barre d'onglets, encoche) ait une vraie valeur sur iPhone.
 export const viewport: Viewport = {
   themeColor: "#1F2557",
+  viewportFit: "cover",
 };
 
 export default async function RootLayout({ children }: { children: ReactNode }) {

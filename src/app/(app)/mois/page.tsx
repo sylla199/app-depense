@@ -20,6 +20,7 @@ import {
 import { formatFcfa, formatMoisEnLettres } from "@/lib/format";
 import { RestantMessage, SoldeCard } from "@/components/mois/SoldeCard";
 import { CategoryCard } from "@/components/mois/CategoryCard";
+import { NetBanner } from "@/components/mois/NetBanner";
 import { contributionsAccumulees, epargnePourProjet, progression, totalProjet } from "@/lib/calculations";
 import { moisEcoulesDepuis } from "@/lib/month";
 
@@ -89,7 +90,8 @@ export default async function MoisPage() {
   if (mois.lines.length === 0) {
     return (
       <div>
-        <h1 className="t-lg" style={{ marginBottom: 16 }}>
+        <NetBanner />
+        <h1 className="t-lg" style={{ marginBottom: 16, marginTop: 16 }}>
           {formatMoisEnLettres(year, month)}
         </h1>
         <div className="card" style={{ textAlign: "center", padding: 48 }}>
@@ -107,6 +109,7 @@ export default async function MoisPage() {
 
   return (
     <div className="stack" style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+      <NetBanner />
       <h1 className="t-lg" style={{ margin: 0 }}>
         {formatMoisEnLettres(year, month)}
       </h1>

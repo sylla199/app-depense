@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { DeconnexionButton } from "@/components/auth/DeconnexionButton";
 import { PreferencesCard } from "@/components/parametres/PreferencesCard";
 import { DonneesCard } from "@/components/parametres/DonneesCard";
+import { InstallButton } from "@/components/pwa/InstallButton";
 
 export default async function ReglagesPage() {
   const session = await getSession();
@@ -36,6 +37,13 @@ export default async function ReglagesPage() {
       </div>
 
       <PreferencesCard reduceMotion={user.reduceMotion} />
+
+      <div className="card">
+        <p className="label" style={{ marginBottom: 12 }}>
+          Application
+        </p>
+        <InstallButton />
+      </div>
 
       <DonneesCard />
 
