@@ -1,0 +1,545 @@
+/**
+ * Classes de composants — reprises des noms du handoff développeur (section
+ * "Composants") pour rester fidèle à la maquette. Seuls les composants
+ * utilisés dans ce jalon (F1-F5) sont ici ; les autres (pavé numérique sur
+ * mesure, bandeau réseau, glisser pour agir, poignée de réordonnancement,
+ * etc.) arriveront avec les jalons qui en ont besoin.
+ */
+
+/* --- Bouton --------------------------------------------------------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  height: 52px;
+  padding: 0 var(--space-6);
+  border: 0;
+  border-radius: var(--radius-pill);
+  font: 600 16px/1 var(--font-sans);
+  cursor: pointer;
+  transition: filter 150ms ease-out, transform 150ms ease-out;
+}
+.btn-sm {
+  height: 44px;
+  padding: 0 var(--space-4);
+}
+.btn-block {
+  display: flex;
+  width: 100%;
+}
+.btn-primary {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.btn-secondary {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+.btn-ghost {
+  background: transparent;
+  color: var(--accent);
+}
+.btn-quiet {
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--line-strong);
+}
+.btn-solid-ink {
+  background: var(--over);
+  color: #ffffff;
+}
+.btn:hover {
+  filter: brightness(0.96);
+}
+.btn:active {
+  transform: scale(0.96);
+}
+.btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.btn[disabled] {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* --- Puce de choix ---------------------------------------------------- */
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 44px;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-pill);
+  background: var(--surface-1);
+  color: var(--ink);
+  font: 500 14px/1 var(--font-sans);
+  cursor: pointer;
+  transition: background 150ms ease-out, color 150ms ease-out;
+}
+.chip[aria-pressed="true"] {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: transparent;
+}
+.chip:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* --- Champ -------------------------------------------------------------- */
+
+.field-box {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.input {
+  height: 52px;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface-1);
+  color: var(--ink);
+  font: 400 15px/22px var(--font-sans);
+}
+.input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 0;
+  border-color: var(--accent);
+}
+.input[aria-invalid="true"] {
+  border: 2px solid var(--over);
+}
+.input[disabled] {
+  opacity: 0.4;
+}
+.input-amount {
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  text-align: right;
+}
+.field-error {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--over);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+/* --- Interrupteur ---------------------------------------------------- */
+
+.switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 48px;
+  height: 28px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-2);
+  border: 0;
+  cursor: pointer;
+  transition: background 200ms ease-out;
+}
+.switch[aria-checked="true"] {
+  background: var(--accent);
+}
+.switch::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #ffffff;
+  transition: transform 200ms ease-out;
+}
+.switch[aria-checked="true"]::after {
+  transform: translateX(20px);
+}
+.switch[disabled] {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* --- Carte -------------------------------------------------------------- */
+
+.card {
+  background: var(--surface-1);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+}
+.card-lg {
+  padding: var(--space-6);
+}
+.card .card {
+  border-radius: var(--radius-sm);
+}
+
+/* --- Ligne de dépense ---------------------------------------------------- */
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--line);
+}
+.row:last-child {
+  border-bottom: 0;
+}
+.row-icon {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  display: grid;
+  place-items: center;
+  color: var(--c, var(--cat-other));
+  background: color-mix(in srgb, var(--c, var(--cat-other)) 18%, transparent);
+}
+.row-main {
+  flex: 1;
+  min-width: 0;
+}
+.row-title {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.row-sub {
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--ink-muted);
+}
+.row-end {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.row-amount {
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.row-amount.pos {
+  color: var(--income);
+}
+.row-amount.neg {
+  color: var(--over);
+}
+.row.done .row-title {
+  text-decoration: line-through;
+  color: var(--ink-muted);
+}
+
+/* --- Carte de catégorie ------------------------------------------------- */
+
+.cat-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+/* --- Jauge ---------------------------------------------------------------- */
+
+.meter {
+  height: 8px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-2);
+  overflow: hidden;
+}
+.meter > span {
+  display: block;
+  height: 100%;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  transition: width 300ms ease-out;
+}
+.meter.ok > span {
+  background: var(--income);
+}
+.meter.warn > span {
+  background: var(--warn);
+}
+.meter.over > span {
+  background: var(--over);
+}
+.meter.cat > span {
+  background: var(--c, var(--cat-other));
+}
+
+/* --- Feuille et dialogue -------------------------------------------------- */
+
+.scrim {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 21, 26, 0.4);
+}
+.sheet {
+  background: var(--surface-1);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  padding: var(--space-2) var(--space-4) var(--space-6);
+  box-shadow: var(--shadow-sheet);
+  animation: sheet-in 200ms ease-out;
+}
+.dialog {
+  background: var(--surface-1);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  width: 480px;
+  max-width: calc(100vw - 32px);
+  animation: dialog-in 200ms ease-out;
+}
+@keyframes sheet-in {
+  from {
+    transform: translateY(8px);
+    opacity: 0;
+  }
+}
+@keyframes dialog-in {
+  from {
+    transform: translateY(8px);
+    opacity: 0;
+  }
+}
+.sheet-grab {
+  width: 36px;
+  height: 4px;
+  border-radius: var(--radius-pill);
+  background: var(--line);
+  margin: 0 auto var(--space-3);
+}
+
+/* --- Bandeau d'annulation ------------------------------------------------ */
+
+.snackbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--band-deep);
+  color: var(--on-band);
+  box-shadow: var(--shadow-sheet);
+  animation: snack-in 220ms ease-out;
+}
+.snack-btn {
+  background: transparent;
+  border: 0;
+  color: var(--on-band);
+  font-weight: 600;
+  cursor: pointer;
+}
+@keyframes snack-in {
+  from {
+    transform: translateY(8px);
+    opacity: 0;
+  }
+}
+
+/* --- Squelette ------------------------------------------------------------ */
+
+.skel {
+  background: var(--surface-2);
+  border-radius: var(--radius-sm);
+  animation: skel-pulse 1.1s ease-in-out infinite;
+}
+@keyframes skel-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* --- Célébration ------------------------------------------------------------ */
+
+.celebrate {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+  animation: celebrate-in 240ms ease-out;
+}
+@keyframes celebrate-in {
+  from {
+    transform: translateY(8px);
+    opacity: 0;
+  }
+}
+
+/* --- Navigation latérale (bureau) ------------------------------------------ */
+
+.sidenav {
+  width: var(--layout-sidenav);
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-6) var(--space-3);
+  border-right: 1px solid var(--line);
+  background: var(--surface-1);
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  height: 44px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-md);
+  color: var(--ink-muted);
+  font-weight: 500;
+  text-decoration: none;
+}
+.nav-item[aria-current="page"] {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.nav-item[aria-disabled="true"] {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* --- Barre d'onglets (mobile et tablette) --------------------------------- */
+
+.tabbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  height: calc(var(--layout-tabbar) + env(safe-area-inset-bottom));
+  padding-bottom: env(safe-area-inset-bottom);
+  background: var(--surface-1);
+  border-top: 1px solid var(--line);
+  z-index: 10;
+}
+.tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  color: var(--ink-muted);
+  font-size: 12px;
+  background: transparent;
+  border: 0;
+  text-decoration: none;
+}
+.tab[aria-current="page"] {
+  color: var(--accent);
+}
+.tab:active {
+  transform: scale(0.96);
+}
+
+/* --- Modale responsive : feuille du bas (mobile) / dialogue (bureau+tablette) */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 21, 26, 0.4);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 50;
+  padding: 0;
+}
+.modal-content {
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: var(--surface-1);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  padding: var(--space-2) var(--space-4) var(--space-6);
+  box-shadow: var(--shadow-sheet);
+  animation: sheet-in 200ms ease-out;
+}
+@media (min-width: 640px) {
+  .modal-overlay {
+    align-items: center;
+    padding: var(--space-4);
+  }
+  .modal-content {
+    width: 480px;
+    max-width: calc(100vw - 32px);
+    border-radius: var(--radius-lg);
+    padding: var(--space-6);
+    animation: dialog-in 200ms ease-out;
+  }
+}
+.modal-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+.modal-close {
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--surface-2);
+  color: var(--ink);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+.modal-close:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* --- Pastille de répartition ------------------------------------------------ */
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--c, var(--cat-other));
+}
+
+/* --- Pavé de choix pourcentage / onglets internes --------------------------- */
+
+.pill-nav {
+  display: inline-flex;
+  padding: 4px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-2);
+  gap: 2px;
+}
+.pill-nav button {
+  height: 36px;
+  padding: 0 var(--space-4);
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--ink-muted);
+  font: 600 13px/1 var(--font-sans);
+  cursor: pointer;
+}
+.pill-nav button[aria-pressed="true"],
+.pill-nav button[aria-selected="true"] {
+  background: var(--surface-1);
+  color: var(--ink);
+}

@@ -1,0 +1,138 @@
+/**
+ * Design tokens — valeurs reprises telles quelles de la section "Design
+ * tokens" du handoff développeur (canvas de design v9). Ne jamais coder une
+ * valeur en dur dans un composant : toujours passer par une de ces
+ * variables. Le thème sombre réassigne les mêmes noms sous
+ * [data-theme="dark"] (non activé dans l'UI de ce jalon — réglage "Bientôt"
+ * — mais prêt pour la V2).
+ */
+
+:root {
+  /* Couleurs de base */
+  --bg-base: #f6f6f9;
+  --surface-1: #ffffff;
+  --surface-2: #eceef4;
+  --line: #dcdfe8;
+  --line-strong: #7b8196;
+  --ink: #14151a;
+  --ink-muted: #5b6072;
+  --accent: #3b57d6;
+  --accent-soft: #e3e8ff;
+  --on-accent: #ffffff;
+  --income: #0f7a50;
+  --over: #c4302b;
+  --warn: #b04a00;
+  --band-deep: #1f2557;
+  --on-band: #ffffff;
+
+  /* Couleurs de catégorie */
+  --cat-fixed: #3f6a86; /* achats fixes */
+  --cat-savings: #7d6500; /* épargne */
+  --cat-family: #6a3fc4; /* famille */
+  --cat-pocket: #3d7a1f; /* argent de poche */
+  --cat-project: #b5246b; /* projets */
+  --cat-other: #566077; /* catégorie personnalisée, par défaut */
+
+  /* Typographie — les variables --font-plus-jakarta-sans/--font-roboto sont
+     injectées par next/font/google dans layout.tsx (polices auto-hébergées). */
+  --font-display: var(--font-plus-jakarta-sans), "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-sans: var(--font-roboto), "Roboto", system-ui, sans-serif;
+
+  /* Espacements */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-24: 96px;
+
+  /* Rayons */
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius-pill: 999px;
+
+  /* Ombres */
+  --shadow-sheet: 0 -8px 32px rgba(0, 0, 0, 0.12);
+
+  /* Largeurs de mise en page */
+  --layout-sidenav: 240px;
+  --layout-content: 1120px;
+  --layout-landing: 1200px;
+  --layout-tabbar: 64px;
+}
+
+:root[data-theme="dark"] {
+  --bg-base: #0e0f13;
+  --surface-1: #17181e;
+  --surface-2: #20222a;
+  --line: #2a2c36;
+  --line-strong: #6c7186;
+  --ink: #f2f3f7;
+  --ink-muted: #9a9eae;
+  --accent: #9db4ff;
+  --accent-soft: #232a45;
+  --on-accent: #0e0f13;
+  --income: #4fd69c;
+  --over: #ff7a7a;
+  --warn: #ff9d4d;
+  --band-deep: #232754;
+  --on-band: #f2f3fa;
+
+  --cat-fixed: #8cc0e0;
+  --cat-savings: #f2d04f;
+  --cat-family: #c4a3ff;
+  --cat-pocket: #9bd66a;
+  --cat-project: #ff8fc0;
+  --cat-other: #aab0c4;
+
+  --shadow-sheet: 0 -8px 32px rgba(0, 0, 0, 0.45);
+}
+
+/* --- Styles de texte (section Typographie du handoff) ------------------ */
+
+.t-xl {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 48px;
+  line-height: 52px;
+  letter-spacing: -1px;
+}
+
+.t-lg {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 32px;
+  line-height: 36px;
+  letter-spacing: -0.5px;
+}
+
+.t-md {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 20px;
+  line-height: 24px;
+}
+
+.caption {
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--ink-muted);
+}
+
+.label {
+  font-weight: 600;
+  font-size: 12px;
+  line-height: 16px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.amount {
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+}

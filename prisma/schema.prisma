@@ -1,0 +1,171 @@
+// Schéma complet du modèle de données (section "Modèle de données suggéré" du
+// handoff développeur). Seules les entités User, RevenueSource, Month,
+// Category, Line sont exposées par une UI dans ce jalon (F1-F5) ; les autres
+// (SavingsAccount, Project, ProjectItem, Achievement) existent déjà pour
+// éviter une migration de schéma lors des prochains jalons.
+//
+// Dev : SQLite (zéro dépendance externe). Prod : changer `provider` en
+// "postgresql" et `DATABASE_URL` — le reste du schéma ne change pas.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum MonthState {
+  OPEN // ouvert
+  CLOSED // bouclé (restant = 0, verrouillé par l'utilisateur plus tard si besoin)
+}
+
+enum CategoryKind {
+  FIXED // achats fixes
+  SAVINGS // épargne
+  FAMILY // famille
+  POCKET // argent de poche
+  CUSTOM // catégorie créée par l'utilisateur
+}
+
+model User {
+  id                String   @id @default(cuid())
+  email             String   @unique
+  passwordHash      String
+  consentAcceptedAt DateTime
+  discreetMode      Boolean  @default(false) // mode discret (montants masqués)
+  reduceMotion      Boolean  @default(false) // réduire les animations
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  revenueSources  RevenueSource[]
+  months          Month[]
+  categories      Category[]
+  savingsAccounts SavingsAccount[]
+  projects        Project[]
+  achievements    Achievement[]
+}
+
+model RevenueSource {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  amount      Int // FCFA, entier positif
+  carryOver   Boolean  @default(true) // "reprise chaque mois"
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model Month {
+  id        String     @id @default(cuid())
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  year      Int
+  month     Int // 1-12
+  state     MonthState @default(OPEN)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  lines Line[]
+
+  @@unique([userId, year, month])
+  @@index([userId])
+}
+
+model Category {
+  id              String       @id @default(cuid())
+  userId          String
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name            String
+  color           String // nom de token couleur de catégorie (ex: "cat-fixed")
+  kind            CategoryKind @default(CUSTOM)
+  order           Int          @default(0)
+  defaultPercent  Int? // pourcentage par défaut proposé (répartition)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  lines Line[]
+
+  @@index([userId])
+}
+
+model Line {
+  id         String   @id @default(cuid())
+  monthId    String
+  month      Month    @relation(fields: [monthId], references: [id], onDelete: Cascade)
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
+  name       String
+  planned    Int // montant prévu, entier > 0
+  actual     Int? // montant réellement dépensé, entier >= 0, facultatif
+  isFixed    Boolean  @default(false) // ligne fixe, reportée chaque mois
+  countsInProjection Boolean @default(false) // pour les lignes de catégorie Épargne
+  order      Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([monthId])
+  @@index([categoryId])
+}
+
+model SavingsAccount {
+  id                 String   @id @default(cuid())
+  userId             String
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name               String
+  balance            Int      @default(0)
+  monthlyContribution Int     @default(0)
+  isLocked           Boolean  @default(false) // "compte bloqué"
+  includeInProjection Boolean @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model Project {
+  id               String    @id @default(cuid())
+  userId           String
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name             String
+  initialSaved     Int       @default(0)
+  monthlyContribution Int    @default(0)
+  targetDate       DateTime?
+  archived         Boolean   @default(false)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  items ProjectItem[]
+
+  @@index([userId])
+}
+
+model ProjectItem {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name      String
+  price     Int
+  quantity  Int      @default(1)
+  link      String?
+  note      String?
+  purchased Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([projectId])
+}
+
+model Achievement {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        String // "mois_boucle" | "premiere_epargne" | "objectif_atteint" | "serie_3_mois"
+  unlockedAt  DateTime @default(now())
+
+  @@index([userId])
+}
