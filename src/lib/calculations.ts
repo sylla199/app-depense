@@ -79,6 +79,22 @@ export function partRevenu(totalCategorieValue: number, revenu: number): number 
   return Math.round((totalCategorieValue / revenu) * 100);
 }
 
+export type EtatMois = "revenu_manquant" | "boucle" | "depasse" | "en_cours";
+
+/**
+ * État du mois pour l'affichage du tableau de bord (bandeau de célébration,
+ * couleur de la jauge, légende). `revenu_manquant` est distinct de `boucle` :
+ * sans aucune source de revenu, `revenu` et `restant` valent tous les deux 0,
+ * ce qui donnerait sinon un "Mois bouclé à 0" trompeur — rien n'empêche de
+ * supprimer toutes ses sources de revenu depuis `/revenus`.
+ */
+export function etatMois(revenu: number, restantValue: number): EtatMois {
+  if (revenu === 0) return "revenu_manquant";
+  if (restantValue === 0) return "boucle";
+  if (restantValue < 0) return "depasse";
+  return "en_cours";
+}
+
 /**
  * Écart d'une ligne = montant prévu moins montant dépensé.
  * Positif = sous le prévu (`--income`), négatif = au-dessus du prévu (`--over`).

@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useFab } from "@/components/nav/FabContext";
 import { CategoryCard } from "@/components/mois/CategoryCard";
 import { IconCheck } from "@/components/ui/Icons";
+import { etatMois } from "@/lib/calculations";
 import { formatFcfa, formatMontant } from "@/lib/format";
 
 interface CategoryItem {
@@ -53,24 +54,22 @@ export function MoisDashboard({
   const [bannerOpen, setBannerOpen] = useState(true);
   useFab({ label: "Ajouter une ligne", href: ajoutHref });
 
-  // Un mois sans aucun revenu configuré (toutes les sources supprimées
-  // depuis /revenus, rien ne l'empêche) donne aussi revenu=0 et affecte=0,
-  // donc restant=0 — à distinguer d'un vrai "mois bouclé", sous peine de
-  // féliciter l'utilisateur pour un budget qui n'existe tout simplement pas.
-  const revenuManquant = revenu === 0;
+  const etat = etatMois(revenu, restant);
+  const revenuManquant = etat === "revenu_manquant";
   const pct = revenu > 0 ? Math.round((affecte / revenu) * 100) : 0;
   const meterW = Math.min(100, pct);
-  const meterCls = restant < 0 ? "over" : restant === 0 && !revenuManquant ? "ok" : "";
-  const caption = revenuManquant
-    ? "Ajoute ton revenu pour voir ton restant se calculer"
-    : restant === 0
-      ? `${pct} % du revenu affecté · chaque franc est à sa place`
-      : restant > 0
-        ? `${pct} % du revenu affecté · ${formatMontant(restant)} FCFA à répartir`
-        : `${pct} % du revenu affecté · ${formatMontant(Math.abs(restant))} FCFA de trop`;
+  const meterCls = etat === "depasse" ? "over" : etat === "boucle" ? "ok" : "";
+  const caption =
+    etat === "revenu_manquant"
+      ? "Ajoute ton revenu pour voir ton restant se calculer"
+      : etat === "boucle"
+        ? `${pct} % du revenu affecté · chaque franc est à sa place`
+        : etat === "en_cours"
+          ? `${pct} % du revenu affecté · ${formatMontant(restant)} FCFA à répartir`
+          : `${pct} % du revenu affecté · ${formatMontant(Math.abs(restant))} FCFA de trop`;
 
-  const showCelebrate = !revenuManquant && restant === 0 && bannerOpen;
-  const showDelta = !revenuManquant && restant === 0 && !bannerOpen;
+  const showCelebrate = etat === "boucle" && bannerOpen;
+  const showDelta = etat === "boucle" && !bannerOpen;
 
   const projRows = [
     { label: "Dans 1 mois", value: epargneMensuelle },
@@ -110,7 +109,7 @@ export function MoisDashboard({
         </div>
       ) : null}
 
-      {restant < 0 ? (
+      {etat === "depasse" ? (
         <div
           className="card"
           role="alert"
@@ -137,7 +136,7 @@ export function MoisDashboard({
         </div>
       ) : null}
 
-      {restant > 0 ? (
+      {etat === "en_cours" ? (
         <div className="card" style={{ display: "flex", alignItems: "center", gap: "var(--space-3)", flexWrap: "wrap" }}>
           <div className="row-main" style={{ minWidth: 200 }}>
             <div className="row-title" style={{ whiteSpace: "normal" }}>

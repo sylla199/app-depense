@@ -6,6 +6,7 @@ import {
   ecartLigne,
   epargneMensuelle,
   epargnePourProjet,
+  etatMois,
   fondsUrgence,
   type CategoryLike,
   type LineLike,
@@ -159,5 +160,27 @@ describe("projet d'achat fictif (section 5)", () => {
 
   it("progression plafonnée à 100 % même si l'épargne dépasse le total", () => {
     expect(progression(1200000, totalProjet(items))).toBe(100);
+  });
+});
+
+describe("état du mois (tableau de bord)", () => {
+  it("revenu_manquant quand il n'y a aucune source de revenu, même si restant vaut aussi 0", () => {
+    // Régression : sans cette distinction, un mois sans aucun revenu
+    // configuré (toutes les sources supprimées depuis /revenus) affichait
+    // "Mois bouclé à 0" — revenu=0 et affecté=0 donnent aussi restant=0.
+    expect(etatMois(0, 0)).toBe("revenu_manquant");
+    expect(etatMois(0, -15000)).toBe("revenu_manquant");
+  });
+
+  it("boucle quand le restant est exactement 0 avec un revenu réel", () => {
+    expect(etatMois(880000, 0)).toBe("boucle");
+  });
+
+  it("depasse quand le restant est négatif avec un revenu réel", () => {
+    expect(etatMois(880000, -5000)).toBe("depasse");
+  });
+
+  it("en_cours quand il reste un montant positif à répartir", () => {
+    expect(etatMois(880000, 40000)).toBe("en_cours");
   });
 });
