@@ -34,6 +34,7 @@ export interface SavingsAccountLike {
 export interface ProjectItemLike {
   price: number;
   quantity: number;
+  purchased?: boolean;
 }
 
 // --- Revenu et synthèse du mois ---------------------------------------
@@ -53,6 +54,13 @@ export function totalCategorie(lines: LineLike[], categoryId: string): number {
 /** Total affecté = somme de toutes les lignes, épargne comprise. */
 export function totalAffecte(lines: LineLike[]): number {
   return lines.reduce((sum, l) => sum + l.planned, 0);
+}
+
+/** Total réellement dépensé d'une catégorie = somme des montants dépensés de ses lignes (0 si non renseigné). */
+export function totalCategorieDepense(lines: LineLike[], categoryId: string): number {
+  return lines
+    .filter((l) => l.categoryId === categoryId)
+    .reduce((sum, l) => sum + (l.actual ?? 0), 0);
 }
 
 /**
@@ -103,6 +111,11 @@ export function etatMois(revenu: number, restantValue: number): EtatMois {
 export function ecartLigne(line: LineLike): number | null {
   if (line.actual === null || line.actual === undefined) return null;
   return line.planned - line.actual;
+}
+
+/** Écart total d'un ensemble de lignes = somme des écarts de celles où un montant dépensé a été renseigné. */
+export function ecartTotal(lines: LineLike[]): number {
+  return lines.reduce((sum, l) => sum + (ecartLigne(l) ?? 0), 0);
 }
 
 // --- Épargne et projection ----------------------------------------------
@@ -175,6 +188,11 @@ export function montantProposeCategorie(revenu: number, pourcentage: number): nu
 /** Total du projet = somme de (prix unitaire × quantité) des éléments. */
 export function totalProjet(items: ProjectItemLike[]): number {
   return items.reduce((sum, it) => sum + it.price * it.quantity, 0);
+}
+
+/** Déjà acheté dans un projet = somme de (prix unitaire × quantité) des éléments cochés "acheté". */
+export function totalAchete(items: ProjectItemLike[]): number {
+  return items.filter((it) => it.purchased).reduce((sum, it) => sum + it.price * it.quantity, 0);
 }
 
 /**

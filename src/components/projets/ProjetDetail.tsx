@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { UndoSnackbar } from "@/components/ui/UndoSnackbar";
 import { IconCheck, IconChevronLeft, IconEdit, IconProjets, IconTrash } from "@/components/ui/Icons";
 import { ItemForm, type ItemData } from "@/components/projets/ItemForm";
+import { resteAFinancer, totalAchete } from "@/lib/calculations";
 import { formatFcfa, formatMontant, formatMoisEnLettres } from "@/lib/format";
 
 interface ProjectData {
@@ -162,7 +163,7 @@ export function ProjetDetail({ project, items }: { project: ProjectData; items: 
     }
   }
 
-  const totalAchete = items.filter((it) => it.purchased).reduce((s, it) => s + it.price * it.quantity, 0);
+  const totalAcheteValue = totalAchete(items);
   const dateLabel = dateEstimeeLabel(project.moisRestants);
   const finance = project.reste <= 0 && project.total > 0;
 
@@ -274,7 +275,7 @@ export function ProjetDetail({ project, items }: { project: ProjectData; items: 
           <div className="stack" style={{ borderTop: "1px solid var(--line)", paddingTop: "var(--space-2)" }}>
             <div className="row-title">Total du projet · {formatFcfa(project.total)}</div>
             <div className="caption">
-              Acheté {formatFcfa(totalAchete)} · reste à acheter {formatFcfa(Math.max(0, project.total - totalAchete))}
+              Acheté {formatFcfa(totalAcheteValue)} · reste à acheter {formatFcfa(resteAFinancer(project.total, totalAcheteValue))}
             </div>
           </div>
         </section>

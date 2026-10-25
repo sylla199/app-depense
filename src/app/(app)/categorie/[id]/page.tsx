@@ -2,7 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { getOrCreateMoisCourant, anneeMoisCourants } from "@/lib/month";
-import { revenuDuMois } from "@/lib/calculations";
+import { revenuDuMois, totalAffecte } from "@/lib/calculations";
 import { formatMoisEnLettres } from "@/lib/format";
 import { CategorieDetail } from "@/components/categorie/CategorieDetail";
 
@@ -21,7 +21,7 @@ export default async function CategoriePage({ params }: { params: Promise<{ id: 
     db.revenueSource.findMany({ where: { userId: session.userId } }),
   ]);
 
-  const totalPlanned = lines.reduce((sum, l) => sum + l.planned, 0);
+  const totalPlanned = totalAffecte(lines);
   const { year, month } = anneeMoisCourants();
 
   return (

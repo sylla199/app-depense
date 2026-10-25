@@ -11,7 +11,7 @@ import { LineRow } from "@/components/categorie/LineRow";
 import { CategoryIcon, IconChevronLeft, IconPlus } from "@/components/ui/Icons";
 import { useFab } from "@/components/nav/FabContext";
 import { categoryClass } from "@/lib/categories";
-import { ecartLigne } from "@/lib/calculations";
+import { ecartTotal, partRevenu } from "@/lib/calculations";
 import { formatMontant } from "@/lib/format";
 
 interface CategorieDetailProps {
@@ -61,12 +61,9 @@ export function CategorieDetail({ category, lines, categories, totalPlanned, rev
     router.refresh();
   }
 
-  const pct = revenu > 0 ? Math.round((totalPlanned / revenu) * 100) : 0;
+  const pct = partRevenu(totalPlanned, revenu);
   const nFixed = lines.filter((l) => l.isFixed).length;
-  const ecartTotal = lines.reduce((sum, l) => {
-    const e = ecartLigne({ categoryId: l.categoryId, planned: l.planned, actual: l.actual });
-    return sum + (e ?? 0);
-  }, 0);
+  const ecartTotalValue = ecartTotal(lines);
   const cls = categoryClass(category.kind);
 
   return (
@@ -138,12 +135,12 @@ export function CategorieDetail({ category, lines, categories, totalPlanned, rev
             <span className="muted">Lignes fixes reportées chaque mois</span>
             <span className="num">{nFixed}</span>
           </div>
-          {ecartTotal !== 0 ? (
+          {ecartTotalValue !== 0 ? (
             <div className="field">
               <span className="muted">Écart total avec le prévu</span>
-              <span className="num" style={{ color: ecartTotal < 0 ? "var(--over)" : "var(--income)" }}>
-                {ecartTotal > 0 ? "+" : ""}
-                {formatMontant(ecartTotal)} FCFA
+              <span className="num" style={{ color: ecartTotalValue < 0 ? "var(--over)" : "var(--income)" }}>
+                {ecartTotalValue > 0 ? "+" : ""}
+                {formatMontant(ecartTotalValue)} FCFA
               </span>
             </div>
           ) : null}

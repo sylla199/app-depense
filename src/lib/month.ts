@@ -1,11 +1,11 @@
 import { db } from "@/lib/db";
 import { revenuDuMois } from "@/lib/calculations";
-import { anneeMoisCourants, ajouterMois, moisEcoulesDepuis, prochainsMoisAbreges } from "@/lib/date";
+import { anneeMoisCourants, ajouterMois, joursRestantsDansLeMois, moisEcoulesDepuis, prochainsMoisAbreges } from "@/lib/date";
 
 // Fonctions de date pures, réexportées pour le code serveur qui préfère tout
 // importer de "@/lib/month" — un composant client doit, lui, importer
 // directement "@/lib/date" (celui-ci touche Prisma, via `db` ci-dessous).
-export { anneeMoisCourants, ajouterMois, moisEcoulesDepuis, prochainsMoisAbreges };
+export { anneeMoisCourants, ajouterMois, joursRestantsDansLeMois, moisEcoulesDepuis, prochainsMoisAbreges };
 
 async function revenuActuel(userId: string): Promise<number> {
   const sources = await db.revenueSource.findMany({ where: { userId } });

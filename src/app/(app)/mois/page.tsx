@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { getOrCreateMoisCourant, anneeMoisCourants } from "@/lib/month";
+import { getOrCreateMoisCourant, anneeMoisCourants, joursRestantsDansLeMois } from "@/lib/month";
 import {
   argentPocheParJour,
   argentPocheParSemaine,
@@ -12,6 +12,7 @@ import {
   revenuDuMois,
   totalAffecte,
   totalCategorie,
+  totalCategorieDepense,
   totalDepense,
   type CategoryLike,
   type LineLike,
@@ -76,13 +77,10 @@ export default async function MoisPage() {
   });
 
   const pocketCategory = categories.find((c) => c.kind === "POCKET");
-  const pocketLines = mois.lines.filter((l) => l.categoryId === pocketCategory?.id);
-  const pocketPrevu = pocketLines.reduce((s, l) => s + l.planned, 0);
-  const pocketDepense = pocketLines.reduce((s, l) => s + (l.actual ?? 0), 0);
+  const pocketPrevu = totalCategorie(lines, pocketCategory?.id ?? "");
+  const pocketDepense = totalCategorieDepense(lines, pocketCategory?.id ?? "");
   const { year, month } = anneeMoisCourants();
-  const joursDansLeMois = new Date(year, month, 0).getDate();
-  const aujourdhui = new Date().getDate();
-  const joursRestants = Math.max(1, joursDansLeMois - aujourdhui + 1);
+  const joursRestants = joursRestantsDansLeMois(year, month);
   const resteParJour = argentPocheParJour(pocketPrevu, pocketDepense, joursRestants);
   const resteParSemaine = argentPocheParSemaine(resteParJour);
 

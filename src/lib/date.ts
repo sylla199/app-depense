@@ -24,6 +24,17 @@ export function moisEcoulesDepuis(date: Date): number {
   return Math.max(0, months);
 }
 
+/**
+ * Jours restants dans le mois donné, aujourd'hui inclus (jamais 0 — sert de
+ * diviseur pour l'argent de poche par jour). `year`/`month` doivent être le
+ * mois courant : ce calcul n'a pas de sens pour un mois passé ou futur.
+ */
+export function joursRestantsDansLeMois(year: number, month: number): number {
+  const joursDansLeMois = new Date(year, month, 0).getDate();
+  const aujourdhui = new Date().getDate();
+  return Math.max(1, joursDansLeMois - aujourdhui + 1);
+}
+
 /** Libellés "Nov. 2026" pour les n prochains mois (graphiques/tableaux de projection). */
 export function prochainsMoisAbreges(n: number): string[] {
   const { year, month } = anneeMoisCourants();

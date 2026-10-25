@@ -4,6 +4,7 @@ import {
   argentPocheParSemaine,
   contributionsAccumulees,
   ecartLigne,
+  ecartTotal,
   epargneMensuelle,
   epargnePourProjet,
   etatMois,
@@ -18,8 +19,10 @@ import {
   resteAFinancer,
   restant,
   revenuDuMois,
+  totalAchete,
   totalAffecte,
   totalCategorie,
+  totalCategorieDepense,
   totalDepense,
   totalProjet,
 } from "@/lib/calculations";
@@ -160,6 +163,41 @@ describe("projet d'achat fictif (section 5)", () => {
 
   it("progression plafonnée à 100 % même si l'épargne dépasse le total", () => {
     expect(progression(1200000, totalProjet(items))).toBe(100);
+  });
+});
+
+describe("totalCategorieDepense et ecartTotal (détail d'une catégorie)", () => {
+  const lignesCategorie: LineLike[] = [
+    { categoryId: "fixed", planned: 20000, actual: 18000 }, // sous le prévu de 2 000
+    { categoryId: "fixed", planned: 5000, actual: 7000 }, // au-dessus du prévu de 2 000
+    { categoryId: "fixed", planned: 16000, actual: null }, // pas encore dépensé
+    { categoryId: "savings", planned: 50000, actual: 50000 }, // autre catégorie, à ignorer
+  ];
+
+  it("totalCategorieDepense = somme des montants dépensés d'une catégorie, 0 pour les lignes sans montant", () => {
+    expect(totalCategorieDepense(lignesCategorie, "fixed")).toBe(25000);
+  });
+
+  it("ecartTotal = somme des écarts des lignes où un montant dépensé a été renseigné", () => {
+    // (20000-18000) + (5000-7000) = 2000 - 2000 = 0 ; la ligne sans `actual` ne compte pas.
+    expect(ecartTotal(lignesCategorie.filter((l) => l.categoryId === "fixed"))).toBe(0);
+  });
+});
+
+describe("totalAchete (détail d'un projet)", () => {
+  const elements = [
+    { price: 350000, quantity: 1, purchased: true }, // Canapé, acheté
+    { price: 200000, quantity: 1, purchased: false }, // Lit, pas encore
+    { price: 25000, quantity: 4, purchased: true }, // Chaises, achetées
+  ];
+
+  it("totalAchete = somme de (prix × quantité) des seuls éléments cochés acheté", () => {
+    expect(totalAchete(elements)).toBe(450000);
+  });
+
+  it("reste à acheter via resteAFinancer, jamais négatif", () => {
+    // total du projet = 350000 + 200000 + 25000×4 = 650 000 ; déjà acheté = 450 000.
+    expect(resteAFinancer(totalProjet(elements), totalAchete(elements))).toBe(200000);
   });
 });
 
