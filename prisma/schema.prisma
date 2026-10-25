@@ -67,6 +67,13 @@ model Month {
   year      Int
   month     Int // 1-12
   state     MonthState @default(OPEN)
+  // Revenu du mois au moment de sa création (somme des sources de revenu à
+  // cet instant). Les sources de revenu sont une liste courante, pas
+  // versionnée par mois : sans cet instantané, l'historique afficherait le
+  // revenu ACTUEL pour tous les mois passés, même si l'utilisateur l'a
+  // changé depuis. Nullable pour les mois créés avant son introduction (ils
+  // retombent sur un calcul en direct, voir `lib/month.ts`).
+  revenueSnapshot Int?
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
 

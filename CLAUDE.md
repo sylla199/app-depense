@@ -30,23 +30,46 @@ revoir si besoin) :
   écoulés depuis sa création` (`contributionsAccumulees` dans
   `calculations.ts`) — pas de registre mensuel détaillé des versements.
 
+**Jalon 3 construit (F7 + RGPD de F8 + F14)** : Historique (liste des mois,
+badges de série), duplication du mois le plus récent (prévu copié, dépensé
+remis à zéro), export CSV de l'historique complet (`historique-depenses.csv`,
+colonnes Mois/Catégorie/Ligne/Prévu/Dépensé) ; export JSON et suppression
+définitive du compte (RGPD) ; "Réduire les animations" pleinement câblé
+(persisté + appliqué sur tout le document, prioritaire sur
+`prefers-reduced-motion`) ; landing page publique (héro, carrousel de
+fonctions, bloc projets, simulateur fonctionnel, bande sécurité, FAQ, pied de
+page), page 404 personnalisée, espace client en `noindex`.
+
+Le modèle `Month` a gagné un champ `revenueSnapshot` (revenu figé à la
+création du mois) pour que l'Historique affiche le revenu *de ce mois-là*,
+pas le revenu actuel — **après avoir tiré ce commit, relancer `npm run dev`**
+(un process déjà démarré garde en mémoire l'ancien Prisma Client et renvoie
+une `PrismaClientValidationError` sur `/api/mois/dupliquer` tant qu'il n'est
+pas redémarré).
+
 **Pas encore construits** (stubs "Bientôt" dans la navigation, pas de 404) :
-- Historique, duplication de mois, export CSV (F7).
-- Réglages complets : mode discret, réduire les animations, thème sombre,
-  code PIN (F8). Le schéma Prisma a déjà les champs `discreetMode` /
-  `reduceMotion` sur `User`.
+- Mode discret : le réglage est persisté (`User.discreetMode`, route `PATCH
+  /api/compte`) mais rien ne masque encore les montants à l'affichage — pas
+  de bouton dans Réglages tant que l'effet n'est pas réel (voir
+  "Conventions" plus bas pour pourquoi ce n'est pas un simple ajout de
+  classe CSS).
+- Thème sombre, code PIN (V2) : tokens prêts dans `tokens.css`
+  (`[data-theme="dark"]`), rien ne les active dans l'UI.
 - PWA : manifeste, service worker, mode hors ligne, guide d'installation (F9).
 - Import CSV du tableur (F12).
 - Rappels (F13, V2).
-- Landing page publique (F14).
 - Réinitialisation du mot de passe par e-mail (F1, Must — reporté : nécessite
   un fournisseur d'envoi d'e-mails à brancher, ex. Resend/Postmark).
-- Pages légales (texte provisoire à relire par un juriste avant mise en ligne).
-- Thème sombre : les tokens existent dans `tokens.css` (`[data-theme="dark"]`)
-  mais rien ne les active encore dans l'UI (prévu V2).
+- Pages légales : le contenu de `/confidentialite` est un stub "Bientôt" ;
+  **le texte légal reste à rédiger et à faire relire par un juriste** avant
+  toute mise en ligne (la landing y renvoie déjà par ancre).
+- `/og-apercu.png` (image de partage 1200×630, section PWA/SEO du handoff) :
+  pas de fichier généré, la balise `openGraph.images` n'est donc pas posée
+  dans `app/page.tsx` plutôt que de pointer vers une image absente.
 
 Prochain jalon suggéré, dans l'ordre du cahier des charges (section 9) :
-Historique/Export/Réglages complets/RGPD/Landing (phase 5), puis PWA.
+PWA (manifeste, service worker, hors ligne, guide d'installation), puis
+import CSV (F12).
 
 ## Stack technique
 
@@ -127,10 +150,14 @@ restant = 0 FCFA et total dépensé = 535 000 FCFA.
 prisma/schema.prisma       # modèle de données complet (voir "État du projet")
 prisma/seed.ts              # jeu de données de démonstration
 src/lib/calculations.ts      # moteur de calcul pur — AUCUN accès BDD ici, testé isolément
-src/lib/auth.ts                # bcrypt + session JWT en cookie httpOnly
-src/lib/validation.ts           # schémas zod + messages d'erreur littéraux du handoff
+src/lib/auth.ts                # bcrypt + session JWT en cookie httpOnly (importe next/headers :
+                                 # jamais depuis un composant client, voir Conventions)
+src/lib/validators.ts           # isEmailValid/isPasswordValid, purs — sûrs pour un composant client
+src/lib/validation.ts            # schémas zod + messages d'erreur littéraux du handoff
 src/lib/format.ts                 # formatage FCFA (espace insécable)
-src/lib/month.ts                   # résolution du "mois courant"
+src/lib/date.ts                    # utilitaires de date purs — sûrs pour un composant client
+src/lib/month.ts                    # résolution/duplication du mois (importe Prisma : jamais
+                                      # depuis un composant client, voir Conventions)
 src/lib/categories.ts                # catégories par défaut + palette de couleurs
 src/styles/tokens.css                 # design tokens (couleurs, typo, espacements...)
 src/styles/components.css              # classes de composants (.btn, .card, .row, .sheet...)
@@ -158,3 +185,28 @@ src/app/api/                             # mutations (POST/PATCH/DELETE) ; les l
 - **Accessibilité** : WCAG 2.2 AA visé. Toute nouvelle page doit suivre les
   rôles ARIA déjà en place (`role="dialog"`, `aria-live="polite"` sur les
   totaux, `aria-invalid`/`aria-describedby` sur les erreurs).
+- **Piège à éviter — frontière client/serveur** : `lib/auth.ts` (importe
+  `next/headers`) et `lib/month.ts` (importe Prisma via `lib/db.ts`) ne
+  peuvent pas être importés depuis un composant `"use client"` — Next.js ne
+  le détecte qu'au `next build` (pas à `next dev`, pas à `tsc --noEmit`),
+  avec une erreur qui ne nomme pas toujours clairement le fichier fautif.
+  C'est pour ça que les fonctions pures qu'ils contiennent par ailleurs
+  (validation d'e-mail/mot de passe, calculs de date) vivent dans
+  `lib/validators.ts` et `lib/date.ts` : un composant client les importe
+  directement, jamais `lib/auth.ts`/`lib/month.ts`. **Avant de considérer un
+  jalon terminé, toujours lancer `npm run build`** (pas seulement `next
+  dev` + `tsc --noEmit`) — c'est le seul des trois qui détecte ce problème,
+  et c'est ainsi que les deux occurrences de ce bug (jalon 2 et jalon 3) ont
+  été trouvées.
+- **Mode discret, prochain qui s'y attaque** : masquer les montants
+  partout nécessite soit un composant `<Amount>` client partagé (à la place
+  de l'appel direct `formatFcfa()` dans chaque page, un vrai sweep sur ~15
+  fichiers), soit une classe CSS cohérente sur CHAQUE affichage de montant
+  (risque de laisser un montant non masqué si un seul site est oublié — pire
+  qu'une fonctionnalité absente). Pas fait à la légère dans ce jalon ; la
+  persistance du réglage, elle, est déjà là (`User.discreetMode`).
+- **Piège à éviter — Prisma Client périmé** : `npx prisma migrate dev`
+  régénère le Prisma Client sur disque, mais un `next dev` déjà lancé garde
+  l'ancien en mémoire (le module Node ne se recharge pas tout seul) et renvoie
+  une `PrismaClientValidationError` ("Unknown argument ...") sur le nouveau
+  champ. **Toujours redémarrer `next dev` après une migration.**

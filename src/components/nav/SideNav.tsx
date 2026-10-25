@@ -8,9 +8,10 @@ const ITEMS = [
   { href: "/epargne", label: "Épargne" },
   { href: "/projets", label: "Projets" },
   { href: "/reglages", label: "Réglages" },
+  { href: "/historique", label: "Historique" },
 ];
 
-/** Barre latérale bureau (≥1024 px). Masquée en dessous via Tailwind. */
+/** Barre latérale bureau (≥1024 px) ; `.sidenav` se masque en dessous via components.css. */
 export function SideNav() {
   const pathname = usePathname();
   return (
@@ -31,9 +32,6 @@ export function SideNav() {
           </Link>
         );
       })}
-      <Link href="/historique" className="nav-item" aria-disabled="true" style={{ opacity: 0.4 }}>
-        Historique
-      </Link>
     </nav>
   );
 }

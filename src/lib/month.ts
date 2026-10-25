@@ -1,42 +1,70 @@
 import { db } from "@/lib/db";
+import { revenuDuMois } from "@/lib/calculations";
+import { anneeMoisCourants, ajouterMois, moisEcoulesDepuis, prochainsMoisAbreges } from "@/lib/date";
 
-/** Année/mois courants (1-12), selon l'horloge du serveur. */
-export function anneeMoisCourants(): { year: number; month: number } {
-  const now = new Date();
-  return { year: now.getFullYear(), month: now.getMonth() + 1 };
+// Fonctions de date pures, réexportées pour le code serveur qui préfère tout
+// importer de "@/lib/month" — un composant client doit, lui, importer
+// directement "@/lib/date" (celui-ci touche Prisma, via `db` ci-dessous).
+export { anneeMoisCourants, ajouterMois, moisEcoulesDepuis, prochainsMoisAbreges };
+
+async function revenuActuel(userId: string): Promise<number> {
+  const sources = await db.revenueSource.findMany({ where: { userId } });
+  return revenuDuMois(sources);
 }
 
 /**
  * Renvoie le mois courant de l'utilisateur, en le créant vide s'il n'existe
- * pas encore (un seul mois par année/mois, règle du cahier des charges).
- * La duplication explicite d'un mois précédent (F7) n'est pas construite
- * dans ce jalon : un mois qui n'existe pas encore est simplement créé vide,
- * ce qui affiche l'état "Ce mois est encore vide" attendu par le handoff.
+ * pas encore (un seul mois par année/mois, règle du cahier des charges). Un
+ * mois nouvellement créé ainsi (plutôt que dupliqué, voir
+ * `dupliquerMoisPrecedent`) affiche l'état "Ce mois est encore vide".
  */
-/** Nombre de mois civils écoulés entre une date et aujourd'hui (0 si ce mois-ci). */
-export function moisEcoulesDepuis(date: Date): number {
-  const now = new Date();
-  const months = (now.getFullYear() - date.getFullYear()) * 12 + (now.getMonth() - date.getMonth());
-  return Math.max(0, months);
-}
-
-/** Libellés "Nov. 2026" pour les n prochains mois (graphiques/tableaux de projection). */
-export function prochainsMoisAbreges(n: number): string[] {
-  const { year, month } = anneeMoisCourants();
-  const labels: string[] = [];
-  for (let i = 1; i <= n; i++) {
-    const date = new Date(year, month - 1 + i, 1);
-    const label = new Intl.DateTimeFormat("fr-FR", { month: "short", year: "numeric" }).format(date);
-    labels.push(label.charAt(0).toUpperCase() + label.slice(1));
-  }
-  return labels;
-}
-
 export async function getOrCreateMoisCourant(userId: string) {
   const { year, month } = anneeMoisCourants();
   const existing = await db.month.findUnique({
     where: { userId_year_month: { userId, year, month } },
   });
   if (existing) return existing;
-  return db.month.create({ data: { userId, year, month } });
+  const revenueSnapshot = await revenuActuel(userId);
+  return db.month.create({ data: { userId, year, month, revenueSnapshot } });
+}
+
+/**
+ * Duplique le mois le plus récent de l'utilisateur vers le mois civil
+ * suivant (F7, Must) : les lignes et leurs montants prévus sont copiés, le
+ * dépensé réel est remis à zéro — l'utilisateur les ajuste ensuite (règle de
+ * gestion du cahier des charges, et réponse au point ouvert #5 du handoff).
+ * Si le mois suivant existe déjà, renvoie ce mois sans rien dupliquer.
+ */
+export async function dupliquerMoisPrecedent(userId: string) {
+  const dernier = await db.month.findFirst({
+    where: { userId },
+    orderBy: [{ year: "desc" }, { month: "desc" }],
+    include: { lines: true },
+  });
+  if (!dernier) return null;
+
+  const { year, month } = ajouterMois(dernier.year, dernier.month, 1);
+  const existant = await db.month.findUnique({ where: { userId_year_month: { userId, year, month } } });
+  if (existant) return existant;
+
+  const revenueSnapshot = await revenuActuel(userId);
+  return db.month.create({
+    data: {
+      userId,
+      year,
+      month,
+      revenueSnapshot,
+      lines: {
+        create: dernier.lines.map((l) => ({
+          categoryId: l.categoryId,
+          name: l.name,
+          planned: l.planned,
+          actual: null,
+          isFixed: l.isFixed,
+          countsInProjection: l.countsInProjection,
+          order: l.order,
+        })),
+      },
+    },
+  });
 }

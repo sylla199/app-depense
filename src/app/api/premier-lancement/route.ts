@@ -32,21 +32,23 @@ export async function POST(request: Request) {
     );
   }
 
+  // La source de revenu doit exister AVANT la création du mois : son
+  // instantané (`revenueSnapshot`) est calculé à partir des sources
+  // existantes au moment de la création (voir lib/month.ts).
+  await db.revenueSource.create({
+    data: { userId, name: "Revenu du mois", amount: revenu, carryOver: true },
+  });
+
   const month = await getOrCreateMoisCourant(userId);
 
-  await db.$transaction([
-    db.revenueSource.create({
-      data: { userId, name: "Revenu du mois", amount: revenu, carryOver: true },
-    }),
-    db.line.create({
-      data: {
-        monthId: month.id,
-        categoryId: category.id,
-        name: premiereLigne.name,
-        planned: premiereLigne.planned,
-      },
-    }),
-  ]);
+  await db.line.create({
+    data: {
+      monthId: month.id,
+      categoryId: category.id,
+      name: premiereLigne.name,
+      planned: premiereLigne.planned,
+    },
+  });
 
   return NextResponse.json({ ok: true });
 }

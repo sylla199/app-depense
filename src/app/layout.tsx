@@ -1,6 +1,8 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans, Roboto } from "next/font/google";
 import type { ReactNode } from "react";
+import { getSession } from "@/lib/auth";
+import { db } from "@/lib/db";
 import "./globals.css";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
@@ -20,11 +22,27 @@ export const metadata: Metadata = {
   description: "Budget mensuel en FCFA : revenus, catégories, épargne et projets d'achat.",
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+// --band-deep, couleur de thème du manifeste PWA (section "PWA, SEO, légal
+// et partage" du handoff) — fixée ici en dur plutôt que lue depuis
+// tokens.css, que le navigateur ne peut pas consulter pour la barre d'état.
+export const viewport: Viewport = {
+  themeColor: "#1F2557",
+};
+
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  // "Réduire les animations" (F8, Should) : réglage lu ici, une fois, pour
+  // tout le document — prioritaire sur `prefers-reduced-motion` du système
+  // (règle du handoff), via la cascade CSS dans globals.css.
+  const session = await getSession();
+  const user = session
+    ? await db.user.findUnique({ where: { id: session.userId }, select: { reduceMotion: true } })
+    : null;
+
   return (
     <html
       lang="fr"
       className={`${plusJakartaSans.variable} ${roboto.variable} h-full`}
+      data-reduce-motion={user?.reduceMotion ? "true" : undefined}
     >
       <body className="min-h-full flex flex-col">
         <a href="#contenu" className="skip-link">

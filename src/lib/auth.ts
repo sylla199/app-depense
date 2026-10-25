@@ -2,6 +2,8 @@ import bcrypt from "bcryptjs";
 import { jwtVerify, SignJWT } from "jose";
 import { cookies } from "next/headers";
 
+export { isEmailValid, isPasswordValid } from "@/lib/validators";
+
 const SESSION_COOKIE = "session";
 const SESSION_DURATION_SECONDS = 60 * 60 * 24 * 30; // 30 jours
 
@@ -23,16 +25,6 @@ export async function hashPassword(password: string): Promise<string> {
 
 export async function verifyPassword(password: string, hash: string): Promise<boolean> {
   return bcrypt.compare(password, hash);
-}
-
-/** 8 caractères minimum, au moins un chiffre (règle du handoff). */
-export function isPasswordValid(password: string): boolean {
-  return password.length >= 8 && /\d/.test(password);
-}
-
-/** Format `texte@texte.texte` (règle du handoff). */
-export function isEmailValid(email: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
 // --- Session (cookie httpOnly signé, jamais localStorage) ------------------

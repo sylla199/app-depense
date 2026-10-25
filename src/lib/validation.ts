@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { isEmailValid, isPasswordValid } from "@/lib/auth";
+import { isEmailValid, isPasswordValid } from "@/lib/validators";
 
 /** Messages d'erreur littéraux du handoff (section "Formulaires en erreur"). */
 export const MESSAGES = {

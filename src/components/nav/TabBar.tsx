@@ -10,7 +10,7 @@ const ITEMS = [
   { href: "/reglages", label: "Réglages" },
 ];
 
-/** Barre d'onglets mobile et tablette (<1024 px). Masquée au-dessus via Tailwind. */
+/** Barre d'onglets mobile et tablette (<1024 px) ; `.tabbar` se masque au-dessus via components.css. */
 export function TabBar() {
   const pathname = usePathname();
   return (
