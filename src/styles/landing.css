@@ -1,0 +1,131 @@
+/**
+ * Styles propres à la page d'accueil — port fidèle du bloc `<style>` scopé
+ * à `Landing.dc.html` dans le canvas (pas dans `ds/depenses/components/
+ * bundle.css`, le système de composants partagé : ces règles n'existent
+ * qu'à l'intérieur de ce gabarit).
+ */
+.landing {
+  background: var(--bg-base);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  padding-bottom: var(--space-8);
+}
+/* `:where()` garde la portée à `.landing` sans ajouter de spécificité : dans
+   la source, cette règle est un simple `a{color:var(--accent)}` global (la
+   page est son propre document isolé) — avec `.landing a` ordinaire, la
+   spécificité supplémentaire battait `.btn-primary` et rendait le texte du
+   bouton "Créer mon espace" invisible (blanc attendu, devenu bleu sur fond
+   bleu) dans la barre de navigation. */
+:where(.landing) a {
+  color: var(--accent);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .landing {
+    scroll-behavior: smooth;
+  }
+}
+.landing .sec {
+  max-width: var(--layout-landing);
+  margin: 0 auto;
+  padding: 0 var(--space-4);
+  box-sizing: border-box;
+}
+.landing .anchor {
+  scroll-margin-top: 88px;
+}
+.landing .gap-sec {
+  padding-top: var(--space-24);
+}
+.landing .d-lg {
+  margin: 0;
+  font: 600 40px/44px var(--font-display);
+  letter-spacing: -1px;
+  max-width: 16ch;
+}
+.landing .lead {
+  margin: 0;
+  font: 400 18px/28px var(--font-sans);
+  color: var(--ink-muted);
+  max-width: 46ch;
+}
+.landing .split {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(420px, 100%), 1fr));
+  gap: var(--space-12);
+  align-items: center;
+}
+.landing .only-mobile {
+  display: none;
+}
+.landing .mobile-menu {
+  display: flex;
+  flex-direction: column;
+  margin: 0 var(--space-4) var(--space-2);
+  padding: var(--space-2);
+  border-radius: var(--radius-lg);
+  background: var(--surface-1);
+}
+.landing .mobile-menu a {
+  display: flex;
+  align-items: center;
+  min-height: 48px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-md);
+  color: var(--ink);
+  text-decoration: none;
+  font: 500 16px/1 var(--font-sans);
+}
+.landing .sim-input:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.landing .sim-field {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  outline: none;
+  padding: 0;
+  color: var(--ink);
+  font: 600 20px/24px var(--font-display);
+  font-variant-numeric: tabular-nums;
+}
+.landing .band .cta-h2 {
+  font-size: 48px;
+  line-height: 52px;
+  max-width: 20ch;
+  margin: 0;
+}
+.landing .footer-cols a {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+}
+.landing .footer-meta a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+@media (max-width: 720px) {
+  .landing .gap-sec {
+    padding-top: var(--space-16);
+  }
+  .landing .d-lg {
+    font-size: 32px;
+    line-height: 36px;
+  }
+  .landing .only-mobile {
+    display: inline-flex;
+  }
+  .landing .brand-name {
+    display: none;
+  }
+  .landing .band .cta-h2 {
+    font-size: 34px;
+    line-height: 38px;
+  }
+  .landing .lead {
+    font-size: 16px;
+    line-height: 26px;
+  }
+}

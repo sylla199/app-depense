@@ -1,15 +1,19 @@
 "use client";
 
-import { useMemo, useState, type CSSProperties } from "react";
+import { useState, type CSSProperties } from "react";
 import { DEFAULT_CATEGORIES } from "@/lib/categories";
 import { montantProposeCategorie } from "@/lib/calculations";
-import { formatFcfa } from "@/lib/format";
+import { formatFcfa, formatMontant } from "@/lib/format";
+
+function digitsOnly(raw: string, max: number): number {
+  const v = raw.replace(/\D/g, "").slice(0, max);
+  return v ? parseInt(v, 10) : 0;
+}
 
 /**
  * Mini-simulateur de la landing (F14, Should) : une vraie calculatrice, sans
  * création de compte. Mêmes pourcentages par défaut que le premier
- * lancement (45/30/5/20) et le même message de total que la répartition de
- * l'espace client.
+ * lancement (45/30/5/20). Fidèle à `Landing.dc.html` (section Simulateur).
  */
 export function Simulateur() {
   const [revenu, setRevenu] = useState(880000);
@@ -17,10 +21,8 @@ export function Simulateur() {
     Object.fromEntries(DEFAULT_CATEGORIES.map((c) => [c.name, c.defaultPercent]))
   );
 
-  const totalPercent = useMemo(
-    () => Object.values(percents).reduce((sum, p) => sum + p, 0),
-    [percents]
-  );
+  const totalPercent = Object.values(percents).reduce((sum, p) => sum + p, 0);
+  const scale = totalPercent > 100 ? 100 / totalPercent : 1;
 
   const totalMessage =
     totalPercent === 100
@@ -28,70 +30,64 @@ export function Simulateur() {
       : totalPercent < 100
         ? `Il reste ${100 - totalPercent} % à répartir.`
         : `Tu dépasses de ${totalPercent - 100} %.`;
+  const totalClass = totalPercent === 100 ? "t-income" : totalPercent > 100 ? "t-over" : "t-ink";
 
   return (
-    <div className="card card-lg" id="simulateur-carte">
-      <div className="field-box" style={{ marginBottom: 16, maxWidth: 240 }}>
+    <div className="sim">
+      <div className="stack" style={{ gap: "var(--space-2)" }}>
         <label className="label" htmlFor="sim-revenu">
           Ton revenu du mois
         </label>
-        <input
-          id="sim-revenu"
-          className="input input-amount"
-          type="number"
-          inputMode="numeric"
-          value={revenu}
-          onChange={(e) => setRevenu(Number(e.target.value) || 0)}
-        />
+        <div className="sim-input">
+          <input
+            id="sim-revenu"
+            className="sim-field"
+            type="text"
+            inputMode="numeric"
+            autoComplete="off"
+            value={revenu ? formatMontant(revenu) : ""}
+            onChange={(e) => setRevenu(digitsOnly(e.target.value, 9))}
+          />
+          <span className="muted">FCFA</span>
+        </div>
       </div>
 
-      <div className="stack" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div
+        className="seg"
+        role="img"
+        aria-label={`Répartition : ${DEFAULT_CATEGORIES.map((c) => `${percents[c.name] ?? 0} % ${c.name.toLowerCase()}`).join(", ")}`}
+      >
         {DEFAULT_CATEGORIES.map((c) => (
-          <div key={c.name} style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <span key={c.name} style={{ width: `${(percents[c.name] ?? 0) * scale}%`, "--c": `var(--${c.color})` } as CSSProperties} />
+        ))}
+      </div>
+
+      <div className="stack" style={{ gap: "var(--space-3)" }}>
+        {DEFAULT_CATEGORIES.map((c) => (
+          <div key={c.name} className="sim-row">
             <span className="dot" style={{ "--c": `var(--${c.color})` } as CSSProperties} />
-            <span style={{ flex: 1 }}>{c.name}</span>
+            <label htmlFor={`sim-pct-${c.name}`}>{c.name}</label>
             <input
-              type="number"
-              className="input"
-              style={{ width: 72, textAlign: "right" }}
+              id={`sim-pct-${c.name}`}
+              className="pct-input"
+              type="text"
+              inputMode="numeric"
+              autoComplete="off"
               value={percents[c.name] ?? 0}
               onChange={(e) =>
-                setPercents((prev) => ({ ...prev, [c.name]: Number(e.target.value) || 0 }))
+                setPercents((prev) => ({ ...prev, [c.name]: Math.min(100, digitsOnly(e.target.value, 3)) }))
               }
-              aria-label={`Pourcentage pour ${c.name}`}
+              aria-label={`${c.name}, en pourcentage`}
             />
-            <span className="caption" style={{ width: 16 }}>
-              %
-            </span>
-            <span className="row-amount" style={{ width: 120, textAlign: "right" }}>
-              {formatFcfa(montantProposeCategorie(revenu, percents[c.name] ?? 0))}
-            </span>
+            <span className="row-amount amt">{formatFcfa(montantProposeCategorie(revenu, percents[c.name] ?? 0))}</span>
           </div>
         ))}
       </div>
 
-      <div className="seg" style={{ display: "flex", height: 10, borderRadius: 999, overflow: "hidden", background: "var(--surface-2)", margin: "16px 0 8px" }}>
-        {DEFAULT_CATEGORIES.map((c) => {
-          const pct = percents[c.name] ?? 0;
-          const width = totalPercent > 100 ? (pct / totalPercent) * 100 : pct;
-          return (
-            <span
-              key={c.name}
-              style={{ width: `${width}%`, background: `var(--${c.color})` }}
-              aria-hidden="true"
-            />
-          );
-        })}
-      </div>
-
-      <p
-        className="caption"
-        role="status"
-        aria-live="polite"
-        style={{ color: totalPercent > 100 ? "var(--over)" : undefined }}
-      >
+      <div className={`caption ${totalClass}`} role="status">
         {totalMessage}
-      </p>
+      </div>
+      <div className="caption">Simulation indicative, rien n&apos;est enregistré.</div>
     </div>
   );
 }

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { isEmailValid } from "@/lib/validators";
 
+/** Formulaire d'inscription à la newsletter du pied de page — fidèle à `Landing.dc.html`. */
 export function NewsletterForm() {
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
@@ -10,6 +11,7 @@ export function NewsletterForm() {
 
   return (
     <form
+      className="signup"
       onSubmit={(e) => {
         e.preventDefault();
         if (!isEmailValid(email)) {
@@ -19,34 +21,33 @@ export function NewsletterForm() {
         setError(null);
         setSent(true);
       }}
-      style={{ display: "flex", gap: 8, flexWrap: "wrap" }}
     >
-      <label className="label" htmlFor="newsletter-email" style={{ width: "100%" }}>
-        Nouveautés par e-mail
+      <label className="sr" htmlFor="mail">
+        Adresse e-mail
       </label>
-      {sent ? (
-        <p role="status" className="caption">
-          Merci, à bientôt par e-mail.
-        </p>
-      ) : (
-        <>
-          <input
-            id="newsletter-email"
-            type="email"
-            className="input"
-            placeholder="toi@exemple.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            aria-invalid={error ? "true" : undefined}
-            style={{ flex: 1, minWidth: 180 }}
-          />
-          <button type="submit" className="btn btn-secondary btn-sm">
+      <input
+        id="mail"
+        className="signup-input"
+        type="email"
+        placeholder="Saisis ton e-mail"
+        value={email}
+        onChange={(e) => {
+          setEmail(e.target.value);
+          setError(null);
+        }}
+        aria-invalid={error ? "true" : undefined}
+        disabled={sent}
+      />
+      <div className="signup-row">
+        <span>{sent ? "Merci, à bientôt par e-mail." : "Reçois les nouveautés de Dépenses."}</span>
+        {!sent ? (
+          <button className="btn btn-sm" type="submit" style={{ background: "var(--accent-soft)", color: "var(--accent)" }}>
             S&apos;inscrire
           </button>
-        </>
-      )}
+        ) : null}
+      </div>
       {error ? (
-        <p role="alert" className="field-error" style={{ width: "100%" }}>
+        <p role="alert" className="field-error">
           {error}
         </p>
       ) : null}
