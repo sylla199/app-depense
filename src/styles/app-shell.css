@@ -377,6 +377,21 @@ a.month-switch:focus-visible {
     display: none !important;
   }
 }
+@media (max-width: 480px) {
+  /* Même correctif que `.app` ci-dessus : une ligne `.row` avec case à
+     cocher + montant + deux `icon-btn` (44px chacun) ne tient pas sur un
+     écran de téléphone étroit sans repasser sur deux lignes — invisible
+     dans l'outil de design (gabarit prévisualisé à largeur fixe), mais le
+     texte du nom et du montant se chevauchait dans un vrai navigateur. */
+  .row {
+    flex-wrap: wrap;
+  }
+  .row-actions {
+    flex-basis: 100%;
+    justify-content: flex-end;
+    margin-left: 0;
+  }
+}
 @media (min-width: 1024px) {
   .only-mobile-block {
     display: none !important;

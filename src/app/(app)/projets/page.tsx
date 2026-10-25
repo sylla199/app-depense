@@ -35,7 +35,7 @@ export default async function ProjetsPage() {
       reste,
       progression: progression(epargne, total),
       moisRestants: moisRestantsProjet(reste, p.monthlyContribution),
-      targetDate: p.targetDate ? p.targetDate.toISOString() : null,
+      contributionMensuelle: p.monthlyContribution,
     };
   });
 

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
-import { Field } from "@/components/ui/Field";
+import { formatMontant } from "@/lib/format";
 
 export interface ItemData {
   id: string;
@@ -19,136 +19,131 @@ interface ItemFormProps {
   projectId: string;
   initial?: ItemData;
   onSaved: () => void;
-  onDeleted?: (item: ItemData) => void;
   onCancel: () => void;
 }
 
-/** Ajout/modification d'un élément de projet (section "Projets et détail d'un projet"). */
-export function ItemForm({ mode, projectId, initial, onSaved, onDeleted, onCancel }: ItemFormProps) {
+function digitsOnly(raw: string): number {
+  const v = raw.replace(/\D/g, "").slice(0, 9);
+  return v ? parseInt(v, 10) : 0;
+}
+
+/** Ajout/modification d'un élément de projet — fidèle à `Projet.dc.html`. */
+export function ItemForm({ mode, projectId, initial, onSaved, onCancel }: ItemFormProps) {
   const [name, setName] = useState(initial?.name ?? "");
-  const [price, setPrice] = useState<number | "">(initial?.price ?? "");
-  const [quantity, setQuantity] = useState<number | "">(initial?.quantity ?? 1);
+  const [price, setPrice] = useState(initial?.price ?? 0);
+  const [quantity, setQuantity] = useState(initial?.quantity ?? 1);
   const [link, setLink] = useState(initial?.link ?? "");
   const [note, setNote] = useState(initial?.note ?? "");
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [nameErr, setNameErr] = useState(false);
+  const [priceErr, setPriceErr] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
-  async function onSubmit() {
-    setErrors({});
-    if (!name.trim()) {
-      setErrors({ name: "Ce champ est obligatoire." });
-      return;
-    }
-    if (typeof price !== "number" || price <= 0) {
-      setErrors({ price: "Entre un montant supérieur à 0." });
+  async function save() {
+    const bad = { nameErr: !name.trim(), priceErr: price <= 0 };
+    if (bad.nameErr || bad.priceErr) {
+      setNameErr(bad.nameErr);
+      setPriceErr(bad.priceErr);
       return;
     }
     setSubmitting(true);
     try {
-      const payload = {
-        name,
-        price,
-        quantity: quantity === "" ? 1 : quantity,
-        link: link || null,
-        note: note || null,
-      };
-      const res = await fetch(
-        mode === "create" ? `/api/projets/${projectId}/elements` : `/api/elements-projet/${initial!.id}`,
-        {
-          method: mode === "create" ? "POST" : "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        }
-      );
-      const data = await res.json();
-      if (!res.ok) {
-        setErrors(data.errors ?? { _global: "Une erreur est survenue." });
-        return;
-      }
+      const payload = { name, price, quantity, link: link || null, note: note || null };
+      await fetch(mode === "create" ? `/api/projets/${projectId}/elements` : `/api/elements-projet/${initial!.id}`, {
+        method: mode === "create" ? "POST" : "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
       onSaved();
     } finally {
       setSubmitting(false);
     }
   }
 
-  async function onDelete() {
-    if (!initial) return;
-    setSubmitting(true);
-    try {
-      const res = await fetch(`/api/elements-projet/${initial.id}`, { method: "DELETE" });
-      const data = await res.json();
-      if (res.ok) onDeleted?.(data.item as ItemData);
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
   return (
-    <div className="stack" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      {errors._global ? (
-        <p role="alert" className="field-error">
-          {errors._global}
-        </p>
-      ) : null}
-
-      <Field label="Nom" value={name} onChange={(e) => setName(e.target.value)} error={errors.name} />
-
-      <div style={{ display: "flex", gap: 12 }}>
-        <div style={{ flex: 2 }}>
-          <Field
-            label="Prix unitaire"
-            type="number"
+    <form className="inline-form" onSubmit={(e) => e.preventDefault()} aria-labelledby="ne-t" style={{ margin: "var(--space-2) 0" }}>
+      <h2 id="ne-t" className="screen-title" style={{ margin: 0, fontSize: 18 }}>
+        {mode === "edit" ? "Modifier l'élément" : "Nouvel élément"}
+      </h2>
+      <div className="field-box">
+        <label className="label" htmlFor="ne-name">
+          Nom
+        </label>
+        <input
+          id="ne-name"
+          className="input"
+          type="text"
+          placeholder="Ex. Table"
+          value={name}
+          onChange={(e) => {
+            setName(e.target.value);
+            setNameErr(false);
+          }}
+          aria-invalid={nameErr ? "true" : undefined}
+        />
+        {nameErr ? (
+          <div className="field-error" role="alert">
+            Donne un nom à cet élément.
+          </div>
+        ) : null}
+      </div>
+      <div className="wrap" style={{ flexWrap: "nowrap", alignItems: "flex-start" }}>
+        <div className="field-box" style={{ flex: 1, minWidth: 0 }}>
+          <label className="label" htmlFor="ne-price">
+            Prix unitaire, en FCFA
+          </label>
+          <input
+            id="ne-price"
+            className="input"
+            type="text"
             inputMode="numeric"
-            amount
-            value={price}
-            onChange={(e) => setPrice(e.target.value === "" ? "" : Number(e.target.value))}
-            error={errors.price}
+            placeholder="0"
+            value={price ? formatMontant(price) : ""}
+            onChange={(e) => {
+              setPrice(digitsOnly(e.target.value));
+              setPriceErr(false);
+            }}
+            aria-invalid={priceErr ? "true" : undefined}
           />
+          {priceErr ? (
+            <div className="field-error" role="alert">
+              Entre un prix supérieur à 0.
+            </div>
+          ) : null}
         </div>
-        <div style={{ flex: 1 }}>
-          <Field
-            label="Quantité"
-            type="number"
+        <div className="field-box" style={{ width: 88 }}>
+          <label className="label" htmlFor="ne-qty">
+            Quantité
+          </label>
+          <input
+            id="ne-qty"
+            className="input"
+            type="text"
             inputMode="numeric"
-            min={1}
             value={quantity}
-            onChange={(e) => setQuantity(e.target.value === "" ? "" : Number(e.target.value))}
+            onChange={(e) => setQuantity(Math.max(1, Math.min(99, digitsOnly(e.target.value))))}
           />
         </div>
       </div>
-
-      <Field label="Lien (facultatif)" value={link} onChange={(e) => setLink(e.target.value)} placeholder="https://…" />
-      <Field label="Note (facultative)" value={note} onChange={(e) => setNote(e.target.value)} />
-
-      {mode === "edit" ? (
-        confirmingDelete ? (
-          <div role="alertdialog" aria-label="Confirmer la suppression" className="card" style={{ background: "var(--surface-2)" }}>
-            <p style={{ margin: "0 0 12px" }}>Supprimer cet élément ?</p>
-            <div style={{ display: "flex", gap: 12 }}>
-              <Button variant="secondary" block onClick={() => setConfirmingDelete(false)}>
-                Garder
-              </Button>
-              <Button variant="solid-ink" block onClick={onDelete} disabled={submitting}>
-                Supprimer
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <button type="button" className="btn btn-ghost" style={{ color: "var(--over)" }} onClick={() => setConfirmingDelete(true)}>
-            Supprimer l&apos;élément
-          </button>
-        )
-      ) : null}
-
-      <div style={{ display: "flex", gap: 12 }}>
-        <Button variant="secondary" onClick={onCancel}>
+      <div className="field-box">
+        <label className="label" htmlFor="ne-link">
+          Lien <span className="caption" style={{ textTransform: "none", letterSpacing: 0 }}>· facultatif</span>
+        </label>
+        <input id="ne-link" className="input" type="url" placeholder="https://" value={link} onChange={(e) => setLink(e.target.value)} />
+      </div>
+      <div className="field-box">
+        <label className="label" htmlFor="ne-note">
+          Note <span className="caption" style={{ textTransform: "none", letterSpacing: 0 }}>· facultative</span>
+        </label>
+        <input id="ne-note" className="input" type="text" placeholder="Ex. couleur gris clair" value={note} onChange={(e) => setNote(e.target.value)} />
+      </div>
+      <div className="wrap" style={{ justifyContent: "flex-end" }}>
+        <Button variant="secondary" size="sm" type="button" onClick={onCancel}>
           Annuler
         </Button>
-        <Button block onClick={onSubmit} disabled={submitting}>
-          {submitting ? "…" : mode === "create" ? "Ajouter" : "Enregistrer"}
+        <Button size="sm" type="button" onClick={save} disabled={submitting}>
+          {mode === "edit" ? "Enregistrer" : "Ajouter"}
         </Button>
       </div>
-    </div>
+    </form>
   );
 }

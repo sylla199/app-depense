@@ -52,6 +52,7 @@ export default async function EpargnePage() {
       }))}
       epargneMensuelle={mensuelle}
       fondsUrgenceMois={urgence}
+      totalDepense={depense}
     />
   );
 }
