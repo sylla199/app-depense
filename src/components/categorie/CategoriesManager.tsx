@@ -1,10 +1,12 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, type CSSProperties } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { Modal } from "@/components/ui/Modal";
+import { IconChevronLeft, IconEdit, IconPlus, IconTrash } from "@/components/ui/Icons";
 import { CATEGORY_COLOR_PALETTE } from "@/lib/categories";
 
 interface CategoryItem {
@@ -14,13 +16,22 @@ interface CategoryItem {
   lineCount: number;
 }
 
-/** Gestion des catégories (F3, Must) : renommer, colorer, créer, supprimer. */
+const COLOR_NAMES: Record<string, string> = {
+  "cat-project": "Rose",
+  "cat-fixed": "Bleu-gris",
+  "cat-savings": "Jaune",
+  "cat-family": "Violet",
+  "cat-pocket": "Vert",
+  "cat-other": "Gris",
+};
+
+/** Gestion des catégories (F3, Must) — fidèle à `Categories.dc.html`. */
 export function CategoriesManager({ categories }: { categories: CategoryItem[] }) {
   const router = useRouter();
   const [editing, setEditing] = useState<Record<string, { name: string; color: string }>>({});
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState("");
-  const [newColor, setNewColor] = useState<string>(CATEGORY_COLOR_PALETTE[5]);
+  const [newColor, setNewColor] = useState<string>(CATEGORY_COLOR_PALETTE[0]);
   const [deleteTarget, setDeleteTarget] = useState<CategoryItem | null>(null);
   const [reassignTo, setReassignTo] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -53,7 +64,7 @@ export function CategoriesManager({ categories }: { categories: CategoryItem[] }
 
   async function createCategory() {
     if (!newName.trim()) {
-      setError("Ce champ est obligatoire.");
+      setError("Donne un nom à ta catégorie.");
       return;
     }
     setSubmitting(true);
@@ -101,158 +112,169 @@ export function CategoriesManager({ categories }: { categories: CategoryItem[] }
   }
 
   return (
-    <div>
-      <h1 className="t-lg" style={{ marginBottom: 16 }}>
-        Catégories
-      </h1>
+    <div className="stack" style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
+      <Link className="back" href="/reglages">
+        <IconChevronLeft />
+        Réglages
+      </Link>
+      <div className="screen-head">
+        <h1 className="screen-title">Catégories</h1>
+        <div className="head-actions">
+          {!creating ? (
+            <Button size="sm" onClick={() => setCreating(true)}>
+              <IconPlus />
+              Nouvelle catégorie
+            </Button>
+          ) : null}
+        </div>
+      </div>
+      <p className="muted" style={{ margin: 0, maxWidth: "62ch" }}>
+        Quatre catégories sont prêtes pour toi. Renomme-les, change leur couleur, ou crées-en
+        d&apos;autres. Les montants restent calculés par l&apos;application.
+      </p>
 
-      <div className="card stack" style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+      {creating ? (
+        <form
+          className="inline-form"
+          onSubmit={(e) => e.preventDefault()}
+          aria-labelledby="nc-t"
+          style={{ maxWidth: 560 }}
+        >
+          <h2 id="nc-t" className="screen-title" style={{ margin: 0, fontSize: 18 }}>
+            Nouvelle catégorie
+          </h2>
+          <Field label="Nom" value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Ex. Santé" error={error} />
+          <div className="field-box">
+            <span className="label" id="nc-col">
+              Couleur
+            </span>
+            <div className="wrap" role="group" aria-labelledby="nc-col">
+              {CATEGORY_COLOR_PALETTE.map((color) => (
+                <button
+                  key={color}
+                  type="button"
+                  className="chip"
+                  aria-pressed={newColor === color}
+                  onClick={() => setNewColor(color)}
+                >
+                  <span className={`dot c-${color.replace("cat-", "")}`} />
+                  {COLOR_NAMES[color]}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="wrap" style={{ justifyContent: "flex-end" }}>
+            <Button variant="secondary" size="sm" type="button" onClick={() => setCreating(false)}>
+              Annuler
+            </Button>
+            <Button size="sm" type="button" onClick={createCategory} disabled={submitting}>
+              Créer la catégorie
+            </Button>
+          </div>
+        </form>
+      ) : null}
+
+      <section className="card" style={{ padding: "var(--space-4) var(--space-4) var(--space-2)" }}>
         {categories.map((c) => {
           const draft = editing[c.id];
+          const cls = `c-${c.color.replace("cat-", "")}`;
           return (
             <div key={c.id} className="row">
-              <span className="dot" style={{ "--c": `var(--${draft?.color ?? c.color})` } as CSSProperties} />
               {draft ? (
-                <div style={{ flex: 1, display: "flex", gap: 8, alignItems: "center" }}>
-                  <input
-                    className="input"
-                    value={draft.name}
-                    onChange={(e) =>
-                      setEditing((prev) => ({ ...prev, [c.id]: { ...prev[c.id], name: e.target.value } }))
-                    }
-                    aria-label={`Nom de la catégorie ${c.name}`}
-                  />
-                  <div style={{ display: "flex", gap: 4 }}>
-                    {CATEGORY_COLOR_PALETTE.map((color) => (
-                      <button
-                        key={color}
-                        type="button"
-                        aria-label={`Couleur ${color}`}
-                        aria-pressed={draft.color === color}
-                        onClick={() =>
-                          setEditing((prev) => ({ ...prev, [c.id]: { ...prev[c.id], color } }))
-                        }
-                        style={{
-                          width: 24,
-                          height: 24,
-                          borderRadius: "50%",
-                          background: `var(--${color})`,
-                          border: draft.color === color ? "2px solid var(--accent)" : "1px solid var(--line)",
-                          cursor: "pointer",
-                        }}
-                      />
-                    ))}
+                <>
+                  <div className="row-icon">
+                    <span className={`dot ${cls}`} style={{ width: 14, height: 14 }} />
+                  </div>
+                  <div className="row-main">
+                    <label className="sr" htmlFor={`name-${c.id}`}>
+                      Nom de la catégorie
+                    </label>
+                    <input
+                      id={`name-${c.id}`}
+                      className="input"
+                      type="text"
+                      value={draft.name}
+                      onChange={(e) => setEditing((prev) => ({ ...prev, [c.id]: { ...prev[c.id], name: e.target.value } }))}
+                      style={{ height: 44 }}
+                    />
                   </div>
                   <Button size="sm" onClick={() => saveEdit(c.id)} disabled={submitting}>
                     Enregistrer
                   </Button>
-                </div>
+                </>
               ) : (
                 <>
-                  <span className="row-main row-title">{c.name}</span>
-                  <span className="caption">{c.lineCount} lignes</span>
-                  <Button variant="ghost" size="sm" onClick={() => startEdit(c)}>
-                    Renommer
-                  </Button>
+                  <div className="row-icon">
+                    <span className={`dot ${cls}`} style={{ width: 14, height: 14 }} />
+                  </div>
+                  <div className="row-main">
+                    <div className="row-title">{c.name}</div>
+                    <div className="row-sub">{c.lineCount} lignes</div>
+                  </div>
+                  <button type="button" className="icon-btn" aria-label={`Renommer ${c.name}`} onClick={() => startEdit(c)}>
+                    <IconEdit />
+                  </button>
                   <button
                     type="button"
-                    className="btn btn-ghost btn-sm"
-                    style={{ color: "var(--over)" }}
+                    className="icon-btn"
+                    aria-label={`Supprimer ${c.name}`}
                     onClick={() => setDeleteTarget(c)}
                   >
-                    Supprimer
+                    <IconTrash />
                   </button>
                 </>
               )}
             </div>
           );
         })}
-      </div>
-
-      <div style={{ marginTop: 16 }}>
-        {creating ? (
-          <div className="card" style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
-            <div style={{ flex: 1 }}>
-              <Field label="Nom de la catégorie" value={newName} onChange={(e) => setNewName(e.target.value)} error={error} />
-            </div>
-            <div style={{ display: "flex", gap: 4, marginBottom: 8 }}>
-              {CATEGORY_COLOR_PALETTE.map((color) => (
-                <button
-                  key={color}
-                  type="button"
-                  aria-label={`Couleur ${color}`}
-                  aria-pressed={newColor === color}
-                  onClick={() => setNewColor(color)}
-                  style={{
-                    width: 24,
-                    height: 24,
-                    borderRadius: "50%",
-                    background: `var(--${color})`,
-                    border: newColor === color ? "2px solid var(--accent)" : "1px solid var(--line)",
-                    cursor: "pointer",
-                  }}
-                />
-              ))}
-            </div>
-            <Button onClick={createCategory} disabled={submitting} style={{ marginBottom: 8 }}>
-              Créer
-            </Button>
-          </div>
-        ) : (
-          <Button variant="secondary" onClick={() => setCreating(true)}>
-            Créer une catégorie
-          </Button>
-        )}
-      </div>
+      </section>
+      <div className="caption">Chaque catégorie garde la même couleur partout : tableau de bord, lignes et graphiques.</div>
 
       {deleteTarget ? (
-        <Modal title="Supprimer la catégorie" onClose={() => setDeleteTarget(null)}>
+        <Modal title={`Supprimer « ${deleteTarget.name} » ?`} onClose={() => setDeleteTarget(null)}>
           {error ? (
-            <p role="alert" className="field-error" style={{ marginBottom: 12 }}>
+            <p role="alert" className="field-error" style={{ marginBottom: "var(--space-3)" }}>
               {error}
             </p>
           ) : null}
           {deleteTarget.lineCount > 0 ? (
             <>
-              <p>
-                « {deleteTarget.name} » contient {deleteTarget.lineCount} ligne(s). Choisis où les
-                réaffecter avant de supprimer.
+              <p className="muted">
+                Cette catégorie contient {deleteTarget.lineCount} ligne{deleteTarget.lineCount > 1 ? "s" : ""}. Choisis
+                où les déplacer, rien ne sera perdu.
               </p>
-              <div className="field-box" style={{ marginBottom: 16 }}>
-                <label className="label" htmlFor="reassign-to">
-                  Réaffecter à
-                </label>
-                <select
-                  id="reassign-to"
-                  className="input"
-                  value={reassignTo}
-                  onChange={(e) => setReassignTo(e.target.value)}
-                >
-                  <option value="">Choisis une catégorie</option>
-                  {categories
-                    .filter((c) => c.id !== deleteTarget.id)
-                    .map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
-                </select>
+              <div className="wrap" role="group" aria-label="Catégorie de destination" style={{ marginBottom: "var(--space-4)" }}>
+                {categories
+                  .filter((c) => c.id !== deleteTarget.id)
+                  .map((c) => (
+                    <button
+                      key={c.id}
+                      type="button"
+                      className="chip"
+                      aria-pressed={reassignTo === c.id}
+                      onClick={() => setReassignTo(c.id)}
+                    >
+                      <span className={`dot c-${c.color.replace("cat-", "")}`} />
+                      {c.name}
+                    </button>
+                  ))}
               </div>
             </>
           ) : (
-            <p style={{ marginBottom: 16 }}>Supprimer « {deleteTarget.name} » ?</p>
+            <p className="muted" style={{ marginBottom: "var(--space-4)" }}>
+              Elle ne contient aucune ligne.
+            </p>
           )}
-          <div style={{ display: "flex", gap: 12 }}>
+          <div className="wrap" style={{ justifyContent: "flex-end" }}>
             <Button variant="secondary" onClick={() => setDeleteTarget(null)}>
-              Annuler
+              Garder la catégorie
             </Button>
             <Button
               variant="solid-ink"
-              block
               onClick={confirmDelete}
               disabled={submitting || (deleteTarget.lineCount > 0 && !reassignTo)}
             >
-              Supprimer et déplacer
+              {deleteTarget.lineCount > 0 ? "Supprimer et déplacer" : "Supprimer"}
             </Button>
           </div>
         </Modal>

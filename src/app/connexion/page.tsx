@@ -12,7 +12,7 @@ export default async function ConnexionPage({
   const { mode } = await searchParams;
 
   return (
-    <main id="contenu" style={{ padding: 16 }}>
+    <main id="contenu">
       <AuthForm initialMode={mode === "inscription" ? "inscription" : "connexion"} />
     </main>
   );
