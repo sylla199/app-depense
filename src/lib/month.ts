@@ -13,6 +13,25 @@ export function anneeMoisCourants(): { year: number; month: number } {
  * dans ce jalon : un mois qui n'existe pas encore est simplement créé vide,
  * ce qui affiche l'état "Ce mois est encore vide" attendu par le handoff.
  */
+/** Nombre de mois civils écoulés entre une date et aujourd'hui (0 si ce mois-ci). */
+export function moisEcoulesDepuis(date: Date): number {
+  const now = new Date();
+  const months = (now.getFullYear() - date.getFullYear()) * 12 + (now.getMonth() - date.getMonth());
+  return Math.max(0, months);
+}
+
+/** Libellés "Nov. 2026" pour les n prochains mois (graphiques/tableaux de projection). */
+export function prochainsMoisAbreges(n: number): string[] {
+  const { year, month } = anneeMoisCourants();
+  const labels: string[] = [];
+  for (let i = 1; i <= n; i++) {
+    const date = new Date(year, month - 1 + i, 1);
+    const label = new Intl.DateTimeFormat("fr-FR", { month: "short", year: "numeric" }).format(date);
+    labels.push(label.charAt(0).toUpperCase() + label.slice(1));
+  }
+  return labels;
+}
+
 export async function getOrCreateMoisCourant(userId: string) {
   const { year, month } = anneeMoisCourants();
   const existing = await db.month.findUnique({

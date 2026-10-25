@@ -64,7 +64,7 @@ export function CategorieDetail({ category, lines, categories, totalPlanned }: C
             {lines.length} {lines.length === 1 ? "ligne" : "lignes"} · prévu {formatFcfa(totalPlanned)}
           </p>
         </div>
-        <Button onClick={() => setModal("create")} className="hidden lg:inline-flex">
+        <Button onClick={() => setModal("create")} className="show-desktop-only">
           Ajouter une ligne
         </Button>
       </div>
@@ -91,7 +91,7 @@ export function CategorieDetail({ category, lines, categories, totalPlanned }: C
       {/* Bouton flottant mobile/tablette (le bouton d'en-tête est masqué en dessous de 1024 px). */}
       <button
         type="button"
-        className="btn btn-primary lg:hidden"
+        className="btn btn-primary show-mobile-only"
         style={{ position: "fixed", right: 16, bottom: 96, zIndex: 20 }}
         onClick={() => setModal("create")}
         aria-label="Ajouter une ligne"

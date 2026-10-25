@@ -14,7 +14,7 @@ const ITEMS = [
 export function SideNav() {
   const pathname = usePathname();
   return (
-    <nav className="sidenav hidden lg:flex" aria-label="Navigation principale">
+    <nav className="sidenav" aria-label="Navigation principale">
       <div className="label" style={{ padding: "0 12px", marginBottom: 8 }}>
         Gérer mes dépenses
       </div>

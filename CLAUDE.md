@@ -13,13 +13,24 @@ validation.ts` et `src/styles/tokens.css`).
 revenus, catégories (CRUD), lignes de dépense (CRUD), synthèse du mois
 (tableau de bord), parcours "premier lancement".
 
+**Jalon 2 construit (F6 + F11)** : Épargne et projection (comptes d'épargne,
+horizon 1-24 mois en tableau et graphique, fonds d'urgence) ; Projets d'achat
+(liste, détail, éléments avec prix/quantité/lien/note, case "acheté",
+progression, date estimée, archivage). Le tableau de bord du Mois affiche
+maintenant un aperçu des projets et une vraie projection (comptes d'épargne
+inclus), plus seulement `epargneMensuelle × 3`.
+
+**Simplifications assumées dans le jalon 2** (par rapport au handoff, à
+revoir si besoin) :
+- La contribution mensuelle d'un projet est un champ direct sur `Project`
+  (`monthlyContribution`), pas un lien vers un `SavingsAccount` existant
+  (le handoff décrit "lier une ligne d'épargne à un projet" — le schéma n'a
+  pas cette relation ; l'effet économique sur la progression est le même).
+- Les contributions accumulées d'un projet sont `monthlyContribution × mois
+  écoulés depuis sa création` (`contributionsAccumulees` dans
+  `calculations.ts`) — pas de registre mensuel détaillé des versements.
+
 **Pas encore construits** (stubs "Bientôt" dans la navigation, pas de 404) :
-- Épargne et projection (F6) — comptes d'épargne, horizon 1-24 mois, fonds
-  d'urgence. Le moteur de calcul (`projection`, `fondsUrgence`) existe déjà
-  et est testé dans `tests/calculations.test.ts` ; il ne reste qu'à
-  construire l'écran et les routes API des comptes d'épargne.
-- Projets d'achat (F11) — le moteur de calcul existe déjà aussi
-  (`totalProjet`, `progression`, `moisRestantsProjet`, etc.).
 - Historique, duplication de mois, export CSV (F7).
 - Réglages complets : mode discret, réduire les animations, thème sombre,
   code PIN (F8). Le schéma Prisma a déjà les champs `discreetMode` /
@@ -35,8 +46,7 @@ revenus, catégories (CRUD), lignes de dépense (CRUD), synthèse du mois
   mais rien ne les active encore dans l'UI (prévu V2).
 
 Prochain jalon suggéré, dans l'ordre du cahier des charges (section 9) :
-Épargne/Projection puis Projets d'achat (phase 4), puis Historique/Export/
-Réglages/RGPD/Landing (phase 5).
+Historique/Export/Réglages complets/RGPD/Landing (phase 5), puis PWA.
 
 ## Stack technique
 
@@ -54,8 +64,20 @@ Réglages/RGPD/Landing (phase 5).
 - Pas de framework CSS de composants : les classes viennent du design system
   du handoff (`src/styles/components.css`), les tokens de
   `src/styles/tokens.css`. Tailwind n'est utilisé que pour quelques utilitaires
-  de mise en page responsive (`hidden lg:flex`, etc.) — jamais pour les
-  couleurs ou espacements, qui passent toujours par les tokens CSS.
+  de mise en page sans équivalent en conflit (marges/largeurs sur un élément
+  qui ne porte pas déjà de classe de composant, ex. `<main>` dans
+  `(app)/layout.tsx`) — jamais pour les couleurs ou espacements, qui passent
+  toujours par les tokens CSS.
+  **Piège à éviter** : ne jamais utiliser `hidden`/`lg:flex`/`lg:hidden` de
+  Tailwind sur un élément qui porte déjà une classe de composant avec son
+  propre `display` (`.btn`, `.tabbar`, `.sidenav`...). `@import "tailwindcss"`
+  est chargé avant `tokens.css`/`components.css` dans `globals.css`, donc à
+  spécificité égale (une classe), la règle `display` de `components.css`
+  l'emporte toujours sur l'utilitaire Tailwind, quel que soit l'ordre des
+  classes dans l'attribut — le bouton ou la nav reste visible à toutes les
+  tailles d'écran au lieu de se cacher. Utiliser plutôt une classe dédiée
+  avec son propre `@media` dans `components.css` (voir `.show-desktop-only`
+  / `.show-mobile-only`, ou la visibilité intégrée à `.sidenav`/`.tabbar`).
 
 ### Note sur les versions
 

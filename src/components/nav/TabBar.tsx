@@ -14,7 +14,7 @@ const ITEMS = [
 export function TabBar() {
   const pathname = usePathname();
   return (
-    <nav className="tabbar lg:hidden" aria-label="Navigation principale">
+    <nav className="tabbar" aria-label="Navigation principale">
       {ITEMS.map((item) => {
         const active = pathname.startsWith(item.href);
         return (

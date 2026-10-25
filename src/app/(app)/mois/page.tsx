@@ -20,6 +20,8 @@ import {
 import { formatFcfa, formatMoisEnLettres } from "@/lib/format";
 import { RestantMessage, SoldeCard } from "@/components/mois/SoldeCard";
 import { CategoryCard } from "@/components/mois/CategoryCard";
+import { contributionsAccumulees, epargnePourProjet, progression, totalProjet } from "@/lib/calculations";
+import { moisEcoulesDepuis } from "@/lib/month";
 
 export default async function MoisPage() {
   const session = await getSession();
@@ -27,13 +29,20 @@ export default async function MoisPage() {
   const { userId } = session;
 
   const moisCourant = await getOrCreateMoisCourant(userId);
-  const [mois, categories, revenueSources] = await Promise.all([
+  const [mois, categories, revenueSources, savingsAccounts, projects] = await Promise.all([
     db.month.findUnique({
       where: { id: moisCourant.id },
       include: { lines: { orderBy: { order: "asc" } } },
     }),
     db.category.findMany({ where: { userId }, orderBy: { order: "asc" } }),
     db.revenueSource.findMany({ where: { userId } }),
+    db.savingsAccount.findMany({ where: { userId } }),
+    db.project.findMany({
+      where: { userId, archived: false },
+      include: { items: true },
+      orderBy: { createdAt: "asc" },
+      take: 2,
+    }),
   ]);
 
   if (!mois) redirect("/premier-lancement");
@@ -51,7 +60,20 @@ export default async function MoisPage() {
   const depense = totalDepense(lines, categoriesLike);
   const restant = calcRestant(revenu, affecte);
   const mensuelle = epargneMensuelle(lines, categoriesLike);
-  const projection3 = projection(mensuelle, [], 3);
+  const projection3 = projection(
+    mensuelle,
+    savingsAccounts.map((a) => ({ balance: a.balance, includeInProjection: a.includeInProjection })),
+    3
+  );
+
+  const projetsApercu = projects.map((p) => {
+    const total = totalProjet(p.items);
+    const epargne = epargnePourProjet(
+      p.initialSaved,
+      contributionsAccumulees(p.monthlyContribution, moisEcoulesDepuis(p.createdAt))
+    );
+    return { id: p.id, name: p.name, total, progression: progression(epargne, total) };
+  });
 
   const pocketCategory = categories.find((c) => c.kind === "POCKET");
   const pocketLines = mois.lines.filter((l) => l.categoryId === pocketCategory?.id);
@@ -161,6 +183,34 @@ export default async function MoisPage() {
           {formatFcfa(projection3)}
         </p>
       </div>
+
+      {projetsApercu.length > 0 ? (
+        <div className="card">
+          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 12 }}>
+            <p className="label" style={{ margin: 0 }}>
+              Projets
+            </p>
+            <Link href="/projets" className="caption" style={{ color: "var(--accent)" }}>
+              Tout voir
+            </Link>
+          </div>
+          <div className="stack" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {projetsApercu.map((p) => (
+              <Link key={p.id} href={`/projets/${p.id}`} className="row" style={{ textDecoration: "none", color: "inherit" }}>
+                <div className="row-main">
+                  <p className="row-title" style={{ margin: 0 }}>
+                    {p.name}
+                  </p>
+                  <div className="meter cat" style={{ marginTop: 4 }}>
+                    <span style={{ width: `${p.progression}%` }} />
+                  </div>
+                </div>
+                <span className="row-amount">{p.progression} %</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -78,3 +78,41 @@ export const premierLancementSchema = z.object({
     categoryId: z.string().min(1),
   }),
 });
+
+// --- Épargne (F6) ------------------------------------------------------
+
+export const compteEpargneCreateSchema = z.object({
+  name: nomSchema,
+  balance: montantNonNegatifSchema.default(0),
+  monthlyContribution: montantNonNegatifSchema.default(0),
+  isLocked: z.boolean().default(false),
+  includeInProjection: z.boolean().default(true),
+});
+
+export const compteEpargneUpdateSchema = compteEpargneCreateSchema.partial();
+
+// --- Projets d'achat (F11) ----------------------------------------------
+
+export const projetCreateSchema = z.object({
+  name: nomSchema,
+  initialSaved: montantNonNegatifSchema.default(0),
+  monthlyContribution: montantNonNegatifSchema.default(0),
+  // Mois futur (règle du handoff), au format "YYYY-MM-DD" ou vide.
+  targetDate: z.string().optional().nullable(),
+});
+
+export const projetUpdateSchema = projetCreateSchema.partial().extend({
+  archived: z.boolean().optional(),
+});
+
+export const elementProjetCreateSchema = z.object({
+  name: nomSchema,
+  price: montantPositifSchema,
+  quantity: z.number().int().min(1, { message: "La quantité doit être d'au moins 1." }).default(1),
+  link: z.string().trim().optional().nullable(),
+  note: z.string().trim().optional().nullable(),
+});
+
+export const elementProjetUpdateSchema = elementProjetCreateSchema.partial().extend({
+  purchased: z.boolean().optional(),
+});

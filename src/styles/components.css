@@ -392,12 +392,23 @@
 .sidenav {
   width: var(--layout-sidenav);
   flex: none;
-  display: flex;
+  /* Masquée sous 1024 px (c'est la barre d'onglets qui sert alors). La
+     visibilité responsive vit ICI, dans la même règle que `display`, plutôt
+     que dans une classe utilitaire Tailwind : `@import "tailwindcss"` est
+     chargé avant ce fichier dans globals.css, donc un `display` défini plus
+     bas dans la cascade (ce fichier) l'emporterait sur `lg:flex` à
+     spécificité égale, quel que soit l'ordre des classes dans l'attribut. */
+  display: none;
   flex-direction: column;
   gap: var(--space-1);
   padding: var(--space-6) var(--space-3);
   border-right: 1px solid var(--line);
   background: var(--surface-1);
+}
+@media (min-width: 1024px) {
+  .sidenav {
+    display: flex;
+  }
 }
 .nav-item {
   display: flex;
@@ -432,6 +443,12 @@
   background: var(--surface-1);
   border-top: 1px solid var(--line);
   z-index: 10;
+}
+@media (min-width: 1024px) {
+  /* Bureau : c'est la barre latérale qui sert de navigation. */
+  .tabbar {
+    display: none;
+  }
 }
 .tab {
   flex: 1;
@@ -508,6 +525,28 @@
 .modal-close:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+
+/* --- Visibilité responsive (voir la note sur .sidenav plus haut : ces
+   classes vivent ici, après .btn, pour gagner la cascade sur son `display`
+   à spécificité égale — jamais `hidden`/`lg:*` de Tailwind pour un élément
+   qui porte déjà une classe de composant avec son propre `display`.) ----- */
+
+.show-desktop-only {
+  display: none;
+}
+@media (min-width: 1024px) {
+  .show-desktop-only {
+    display: inline-flex;
+  }
+}
+.show-mobile-only {
+  display: inline-flex;
+}
+@media (min-width: 1024px) {
+  .show-mobile-only {
+    display: none;
+  }
 }
 
 /* --- Pastille de répartition ------------------------------------------------ */
