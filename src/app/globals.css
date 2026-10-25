@@ -1,19 +1,11 @@
 @import "tailwindcss";
 @import "../styles/tokens.css";
 @import "../styles/components.css";
+@import "../styles/app-shell.css";
+@import "../styles/polish.css";
 
 html {
   height: 100%;
-}
-
-body {
-  margin: 0;
-  background: var(--bg-base);
-  color: var(--ink);
-  font-family: var(--font-sans);
-  font-size: 15px;
-  line-height: 22px;
-  -webkit-font-smoothing: antialiased;
 }
 
 * {

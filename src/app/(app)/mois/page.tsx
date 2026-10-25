@@ -9,7 +9,6 @@ import {
   epargneMensuelle,
   partRevenu,
   projection,
-  restant as calcRestant,
   revenuDuMois,
   totalAffecte,
   totalCategorie,
@@ -17,12 +16,12 @@ import {
   type CategoryLike,
   type LineLike,
 } from "@/lib/calculations";
-import { formatFcfa, formatMoisEnLettres } from "@/lib/format";
-import { RestantMessage, SoldeCard } from "@/components/mois/SoldeCard";
-import { CategoryCard } from "@/components/mois/CategoryCard";
-import { NetBanner } from "@/components/mois/NetBanner";
 import { contributionsAccumulees, epargnePourProjet, progression, totalProjet } from "@/lib/calculations";
 import { moisEcoulesDepuis } from "@/lib/month";
+import { formatMoisEnLettres } from "@/lib/format";
+import { MoisDashboard } from "@/components/mois/MoisDashboard";
+import { NetBanner } from "@/components/mois/NetBanner";
+import { IconChevronDown, IconHistorique, IconPlus } from "@/components/ui/Icons";
 
 export default async function MoisPage() {
   const session = await getSession();
@@ -59,7 +58,7 @@ export default async function MoisPage() {
   const revenu = revenuDuMois(revenueSources);
   const affecte = totalAffecte(lines);
   const depense = totalDepense(lines, categoriesLike);
-  const restant = calcRestant(revenu, affecte);
+  const restant = revenu - affecte;
   const mensuelle = epargneMensuelle(lines, categoriesLike);
   const projection3 = projection(
     mensuelle,
@@ -87,124 +86,86 @@ export default async function MoisPage() {
   const resteParJour = argentPocheParJour(pocketPrevu, pocketDepense, joursRestants);
   const resteParSemaine = argentPocheParSemaine(resteParJour);
 
-  if (mois.lines.length === 0) {
-    return (
-      <div>
-        <NetBanner />
-        <h1 className="t-lg" style={{ marginBottom: 16, marginTop: 16 }}>
-          {formatMoisEnLettres(year, month)}
-        </h1>
-        <div className="card" style={{ textAlign: "center", padding: 48 }}>
-          <p className="t-md">Ce mois est encore vide</p>
-          <p className="caption" style={{ margin: "8px 0 24px" }}>
+  const firstCategoryHref = `/categorie/${categories[0]?.id ?? ""}`;
+
+  return (
+    <div className="stack" style={{ display: "flex", flexDirection: "column", gap: "var(--space-6)" }}>
+      <div className="screen-head">
+        <Link className="month-switch" href="/historique" aria-label={`Changer de mois, ${formatMoisEnLettres(year, month)}`}>
+          <h1 className="m-label" style={{ margin: 0, minWidth: 0 }}>
+            {formatMoisEnLettres(year, month)}
+          </h1>
+          <IconChevronDown />
+        </Link>
+        {mois.lines.length > 0 ? (
+          <div className="head-actions">
+            <Link className="btn btn-secondary btn-sm" href="/historique">
+              <IconHistorique />
+              Historique
+            </Link>
+            <Link className="btn btn-primary btn-sm hide-mobile" href={firstCategoryHref}>
+              <IconPlus />
+              Ajouter une ligne
+            </Link>
+          </div>
+        ) : null}
+      </div>
+
+      <NetBanner />
+
+      {mois.lines.length === 0 ? (
+        <div className="card stack" style={{ alignItems: "center", textAlign: "center", padding: "var(--space-12) var(--space-6)", gap: "var(--space-4)" }}>
+          <div className="badge-icon">
+            <IconPlus />
+          </div>
+          <div style={{ font: "600 20px/28px var(--font-sans)" }}>Ce mois est encore vide</div>
+          <p className="muted" style={{ margin: 0, maxWidth: "42ch" }}>
             Ajoute ta première ligne pour voir ton restant et ta projection d&apos;épargne.
           </p>
-          <Link href={`/categorie/${categories[0]?.id ?? ""}`} className="btn btn-primary">
+          <Link className="btn btn-primary" href={firstCategoryHref}>
             Ajouter une première ligne
           </Link>
         </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="stack" style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-      <NetBanner />
-      <h1 className="t-lg" style={{ margin: 0 }}>
-        {formatMoisEnLettres(year, month)}
-      </h1>
-
-      <SoldeCard revenu={revenu} affecte={affecte} depense={depense} restant={restant} />
-      <RestantMessage restant={restant} />
-
-      <section>
-        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 12 }}>
-          <h2 className="label" style={{ margin: 0 }}>
-            Où va ton revenu
-          </h2>
-          <Link href="/categories" className="caption" style={{ color: "var(--accent)" }}>
-            Gérer
-          </Link>
-        </div>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
-            gap: 16,
-          }}
-        >
-          {categories.map((c) => (
-            <CategoryCard
-              key={c.id}
-              id={c.id}
-              name={c.name}
-              color={c.color}
-              total={totalCategorie(lines, c.id)}
-              part={partRevenu(totalCategorie(lines, c.id), revenu)}
-              lineCount={mois.lines.filter((l) => l.categoryId === c.id).length}
-            />
-          ))}
-        </div>
-      </section>
-
-      {pocketCategory ? (
-        <div className="card">
-          <p className="label" style={{ marginBottom: 8 }}>
-            Argent de poche
-          </p>
-          <div style={{ display: "flex", gap: 24 }}>
-            <div>
-              <p className="caption" style={{ margin: 0 }}>
-                Par jour
-              </p>
-              <p className="t-md amount" style={{ margin: 0 }}>
-                {formatFcfa(resteParJour)}
-              </p>
-            </div>
-            <div>
-              <p className="caption" style={{ margin: 0 }}>
-                Par semaine
-              </p>
-              <p className="t-md amount" style={{ margin: 0 }}>
-                {formatFcfa(resteParSemaine)}
-              </p>
-            </div>
-          </div>
-        </div>
-      ) : null}
-
-      <div className="card">
-        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
-          <p className="label" style={{ margin: 0 }}>
-            Projection à 3 mois
-          </p>
-          <Link href="/epargne" className="caption" style={{ color: "var(--accent)" }}>
-            Voir la projection
-          </Link>
-        </div>
-        <p className="t-md amount" style={{ margin: "8px 0 0" }}>
-          {formatFcfa(projection3)}
-        </p>
-      </div>
+      ) : (
+        <MoisDashboard
+          revenu={revenu}
+          affecte={affecte}
+          depense={depense}
+          restant={restant}
+          categories={categories.map((c) => ({
+            id: c.id,
+            name: c.name,
+            color: c.color,
+            kind: c.kind,
+            total: totalCategorie(lines, c.id),
+            part: partRevenu(totalCategorie(lines, c.id), revenu),
+            lineCount: mois.lines.filter((l) => l.categoryId === c.id).length,
+          }))}
+          resteParJour={resteParJour}
+          resteParSemaine={resteParSemaine}
+          projection3={projection3}
+          epargneMensuelle={mensuelle}
+          categorieHref={firstCategoryHref}
+          ajoutHref={firstCategoryHref}
+        />
+      )}
 
       {projetsApercu.length > 0 ? (
         <div className="card">
-          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 12 }}>
+          <div className="sec-title">
             <p className="label" style={{ margin: 0 }}>
               Projets
             </p>
-            <Link href="/projets" className="caption" style={{ color: "var(--accent)" }}>
+            <Link href="/projets" className="link">
               Tout voir
             </Link>
           </div>
-          <div className="stack" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <div className="stack" style={{ display: "flex", flexDirection: "column", gap: "var(--space-3)" }}>
             {projetsApercu.map((p) => (
               <Link key={p.id} href={`/projets/${p.id}`} className="row" style={{ textDecoration: "none", color: "inherit" }}>
                 <div className="row-main">
-                  <p className="row-title" style={{ margin: 0 }}>
-                    {p.name}
-                  </p>
-                  <div className="meter cat" style={{ marginTop: 4 }}>
+                  <div className="row-title">{p.name}</div>
+                  <div className="meter cat c-project" style={{ marginTop: 4 }}>
                     <span style={{ width: `${p.progression}%` }} />
                   </div>
                 </div>

@@ -1,0 +1,405 @@
+/**
+ * Mise en page de l'espace client — port fidèle de `project/app.css` du
+ * canvas de design v9. S'appuie sur les tokens et `components.css`
+ * (équivalent de bundle.css).
+ */
+
+a {
+  color: var(--accent);
+}
+.app {
+  display: flex;
+  align-items: stretch;
+  background: var(--bg-base);
+  color: var(--ink);
+  font-family: var(--font-sans);
+}
+.app .sidenav {
+  flex: none;
+  position: sticky;
+  top: 0;
+  align-self: stretch;
+  border-radius: 0;
+}
+.app .sidenav-brand {
+  padding-bottom: var(--space-6);
+}
+.main {
+  flex: 1;
+  min-width: 0;
+  padding: var(--space-6) var(--space-6) var(--space-12);
+  box-sizing: border-box;
+}
+.content {
+  max-width: var(--layout-content);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+.tabbar-wrap {
+  display: none;
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+}
+.fab-pos {
+  position: absolute;
+  right: var(--space-4);
+  top: -72px;
+}
+.screen-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3) var(--space-4);
+}
+.screen-title {
+  margin: 0;
+  font: 600 20px/28px var(--font-sans);
+}
+.head-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+.month-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 4px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-1);
+}
+.month-switch .icon-btn {
+  background: transparent;
+  width: 40px;
+  height: 40px;
+}
+.month-switch .m-label {
+  min-width: 128px;
+  text-align: center;
+  font: 600 15px/1 var(--font-display);
+}
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  color: var(--accent);
+  font: 600 15px/1 var(--font-sans);
+  text-decoration: none;
+}
+.dash {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 380px;
+  grid-template-areas: "cats bal" "cats proj";
+  gap: var(--space-6);
+  align-items: start;
+}
+.a-bal {
+  grid-area: bal;
+}
+.a-cats {
+  grid-area: cats;
+}
+.a-proj {
+  grid-area: proj;
+}
+.cols-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
+  gap: var(--space-6);
+  align-items: start;
+}
+.cols-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 380px;
+  gap: var(--space-6);
+  align-items: start;
+}
+.cat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
+  gap: var(--space-4);
+}
+.sec-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin: 0 0 var(--space-3);
+}
+.field-box {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.input {
+  box-sizing: border-box;
+  width: 100%;
+  height: 52px;
+  padding: 0 var(--space-4);
+  border: 0;
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+  color: var(--ink);
+  font: 400 16px/24px var(--font-sans);
+}
+.input::placeholder {
+  color: var(--ink-muted);
+}
+.input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.input-amount {
+  font: 600 20px/24px var(--font-display);
+  font-variant-numeric: tabular-nums;
+}
+.btn-block {
+  display: flex;
+  width: 100%;
+}
+.scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(20, 21, 26, 0.45);
+  z-index: 20;
+}
+.pill-nav {
+  display: inline-flex;
+  gap: var(--space-1);
+  padding: 4px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-2);
+}
+.pill-nav button {
+  height: 40px;
+  padding: 0 var(--space-4);
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--ink-muted);
+  font: 600 15px/1 var(--font-display);
+  cursor: pointer;
+}
+.pill-nav button[aria-pressed="true"] {
+  background: var(--surface-1);
+  color: var(--ink);
+}
+.pill-nav button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.step-dots {
+  display: flex;
+  gap: var(--space-2);
+}
+.step-dots span {
+  width: 32px;
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--line);
+}
+.step-dots span.on {
+  background: var(--accent);
+}
+.settings-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 56px;
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--line);
+}
+.settings-row:last-child {
+  border-bottom: 0;
+}
+.settings-row .row-main {
+  min-width: 0;
+}
+.link-row {
+  color: inherit;
+  text-decoration: none;
+}
+.link-row:hover .row-title {
+  color: var(--accent);
+}
+.lock-note {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+.num {
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+.table-head {
+  display: grid;
+  gap: var(--space-3);
+  padding: 0 0 var(--space-2);
+  border-bottom: 1px solid var(--line);
+}
+.sheet-wide {
+  max-width: 520px;
+}
+
+/* Zones tactiles de 44 px minimum (surcharge locale du design system) */
+.chip {
+  height: 44px;
+  padding: 0 16px;
+}
+.switch::before {
+  content: "";
+  position: absolute;
+  inset: -8px -4px;
+}
+.check {
+  position: relative;
+}
+.check::before {
+  content: "";
+  position: absolute;
+  inset: -10px;
+}
+.pill-nav button {
+  height: 44px;
+}
+a.month-switch {
+  text-decoration: none;
+  color: var(--ink);
+  padding: 0 var(--space-4);
+  min-height: 44px;
+  gap: var(--space-2);
+}
+a.month-switch:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.inline-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-6);
+  border-radius: var(--radius-lg);
+  background: var(--surface-1);
+  box-shadow: inset 0 0 0 2px var(--accent-soft);
+}
+.skel {
+  background: var(--surface-2);
+  border-radius: var(--radius-md);
+  animation: pulse 1.1s ease-in-out infinite alternate;
+}
+@keyframes pulse {
+  from {
+    opacity: 0.55;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.sim-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) 72px;
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+}
+.sim-row .amt {
+  grid-column: 2 / 4;
+  justify-self: end;
+}
+.pct-input {
+  box-sizing: border-box;
+  width: 72px;
+  height: 44px;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+  color: var(--ink);
+  text-align: center;
+  font: 600 16px/1 var(--font-display);
+}
+.pct-input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.chart-line {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+@media (max-width: 1023px) {
+  /* Correctif : dans la source du canvas, `.app` reste en `flex-direction:
+     row` à toutes les tailles — invisible dans l'outil de design, qui
+     prévisualise chaque gabarit (bureau/tablette/mobile) à une largeur
+     fixe sans jamais le faire re-fluer, mais ça casse complètement la mise
+     en page dans un vrai navigateur : `.main` et `.tabbar-wrap` se
+     partagent la largeur au lieu de s'empiler, écrasant tout le contenu
+     (titres et catégories tronqués à quelques caractères). `.tabbar-wrap`
+     passe aussi en `position: fixed` plutôt que `sticky` : une fois `.app`
+     empilée en colonne, un `sticky` sur le dernier enfant d'une colonne ne
+     reste pas accroché au bas du VIEWPORT pendant le défilement, seulement
+     au bas de son propre bloc. */
+  .app {
+    flex-direction: column;
+  }
+  .app .sidenav {
+    display: none;
+  }
+  .tabbar-wrap {
+    display: block;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10;
+  }
+  .main {
+    padding: var(--space-4) var(--space-4) 96px;
+  }
+  .dash {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "bal" "cats" "proj";
+  }
+  .cols-main {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .month-switch .m-label {
+    min-width: 104px;
+  }
+  .hide-mobile {
+    display: none !important;
+  }
+}
+@media (min-width: 1024px) {
+  .only-mobile-block {
+    display: none !important;
+  }
+  .screen-title {
+    font-size: 24px;
+    line-height: 32px;
+  }
+}
+
+/* Tablette (640-1023 px) : le contenu respire, la barre d'onglets reste. */
+@media (min-width: 640px) and (max-width: 1023px) {
+  .main {
+    padding-inline: var(--space-8);
+  }
+  .content {
+    max-width: 720px;
+  }
+  .cat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .dash,
+  .cols-main {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

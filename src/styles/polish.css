@@ -1,0 +1,505 @@
+/**
+ * Finitions UI — port fidèle de `project/polish.css` du canvas de design v9 :
+ * retour au toucher, transitions ciblées, rayons concentriques, icônes,
+ * erreurs de formulaire, bandeau d'annulation, pages publiques, FAQ.
+ */
+
+/* Retour à la pression et transitions : propriétés listées, jamais "all" */
+.btn,
+.chip,
+.key,
+.fab,
+.icon-btn,
+.sheet-close,
+.pill-nav button {
+  transition:
+    scale 150ms ease-out,
+    background-color 150ms ease-out,
+    color 150ms ease-out,
+    filter 150ms ease-out;
+}
+.btn:active:not([disabled]),
+.chip:active,
+.key:active,
+.fab:active,
+.icon-btn:active:not([disabled]),
+.sheet-close:active {
+  scale: 0.96;
+}
+.switch {
+  transition: background-color 0.2s ease-out;
+}
+.switch::after {
+  transition:
+    transform 0.2s ease-out,
+    background-color 0.2s ease-out;
+}
+.check {
+  transition:
+    background-color 150ms ease-out,
+    border-color 150ms ease-out;
+}
+
+/* Coche : fondu + échelle + flou */
+.check .ico {
+  opacity: 0;
+  scale: 0.25;
+  filter: blur(4px);
+  transition:
+    opacity 150ms cubic-bezier(0.2, 0, 0, 1),
+    scale 150ms cubic-bezier(0.2, 0, 0, 1),
+    filter 150ms cubic-bezier(0.2, 0, 0, 1);
+}
+.check[aria-checked="true"] .ico {
+  opacity: 1;
+  scale: 1;
+  filter: blur(0);
+}
+
+/* Deux icônes superposées, une seule visible (œil / œil barré) */
+.swap {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+}
+.swap .ico {
+  grid-area: 1 / 1;
+  transition:
+    opacity 150ms cubic-bezier(0.2, 0, 0, 1),
+    scale 150ms cubic-bezier(0.2, 0, 0, 1),
+    filter 150ms cubic-bezier(0.2, 0, 0, 1);
+}
+.swap .b,
+.swap.is-on .a {
+  opacity: 0;
+  scale: 0.25;
+  filter: blur(4px);
+}
+.swap .a,
+.swap.is-on .b {
+  opacity: 1;
+  scale: 1;
+  filter: blur(0);
+}
+
+/* Jauges et barres : transition à la modification, pas de rejeu à l'affichage */
+.meter > span {
+  transition: width 0.3s ease-out;
+}
+.proj-bar {
+  transition: height 0.3s ease-out;
+}
+
+/* Rayons concentriques : rayon intérieur = rayon extérieur moins le padding */
+.card .card,
+.dialog .card,
+.showcase .showcase-art {
+  border-radius: var(--radius-sm);
+}
+
+/* Ombre d'un dialogue centré (la feuille du bas garde l'ombre vers le haut) */
+.dialog {
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 0.06),
+    0 8px 24px rgb(0 0 0 / 0.12);
+}
+[data-theme="dark"] .dialog {
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 0.3),
+    0 8px 24px rgb(0 0 0 / 0.45);
+}
+
+/* Icônes : le trait suit le poids du texte voisin ; l'onglet actif est plein */
+.btn .ico {
+  stroke-width: 2;
+}
+.tag .ico {
+  stroke-width: 2.5;
+}
+.tab[aria-current="page"] .ico,
+.nav-item[aria-current="page"] .ico {
+  fill: currentColor;
+  fill-opacity: 0.18;
+}
+
+/* Alignement optique : un bouton avec icône en tête a moins de padding à gauche */
+.btn:has(> .ico:first-child) {
+  padding-left: calc(var(--space-6) - 4px);
+}
+.btn-sm:has(> .ico:first-child) {
+  padding-left: 12px;
+}
+
+/* Thème sombre : blocs pastel, bouton clair sur bannière accent */
+[data-theme="dark"] .pastel {
+  background: color-mix(in srgb, var(--c) 22%, var(--surface-1));
+}
+[data-theme="dark"] .pastel p {
+  color: var(--ink-muted);
+}
+[data-theme="dark"] .pastel .badge-icon {
+  background: var(--surface-1);
+}
+[data-theme="dark"] .band.accent .btn-light {
+  background: var(--on-accent);
+  color: var(--accent);
+}
+
+/* Erreurs de formulaire : texte + icône + liseré, jamais la couleur seule */
+.input[aria-invalid="true"] {
+  box-shadow: inset 0 0 0 2px var(--over);
+}
+.field-error {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-1);
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 500;
+  color: var(--over);
+}
+.field-error::before {
+  content: "!";
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--over);
+  color: var(--bg-base);
+  font: 700 11px/1 var(--font-sans);
+}
+
+/* Bandeau d'annulation (snackbar) */
+.snackbar {
+  position: sticky;
+  bottom: var(--space-4);
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  width: 100%;
+  max-width: 440px;
+  margin: 0 auto;
+  box-sizing: border-box;
+  padding: var(--space-1) var(--space-2) var(--space-1) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--ink);
+  color: var(--bg-base);
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 0.12),
+    0 8px 24px rgb(0 0 0 / 0.2);
+}
+.snack-btn {
+  min-height: 44px;
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--accent-soft);
+  font: 600 15px/1 var(--font-display);
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+}
+[data-theme="dark"] .snack-btn {
+  color: var(--on-accent);
+}
+@media (max-width: 1023px) {
+  .snackbar {
+    bottom: 88px;
+  }
+}
+
+/* Poignée de réordonnancement et ligne soulevée */
+.grip {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 32px;
+  height: 44px;
+  color: var(--ink-muted);
+  cursor: grab;
+}
+.row.lifted {
+  background: var(--surface-1);
+  border-radius: var(--radius-md);
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 0.08),
+    0 12px 28px rgb(0 0 0 / 0.18);
+  border-bottom-color: transparent;
+  position: relative;
+  z-index: 2;
+}
+.drop-line {
+  height: 3px;
+  border-radius: 2px;
+  background: var(--accent);
+  margin: -2px 0;
+}
+
+/* Balayage : actions révélées derrière la ligne */
+.swipe {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+}
+.swipe-actions {
+  position: absolute;
+  inset: 0 0 0 auto;
+  display: flex;
+}
+.swipe-actions > * {
+  display: grid;
+  place-items: center;
+  width: 84px;
+  border: 0;
+  font: 600 13px/16px var(--font-sans);
+  color: #fff;
+  text-decoration: none;
+  gap: 2px;
+  align-content: center;
+}
+.swipe-actions .edit {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.swipe-actions .del {
+  background: var(--over);
+  color: var(--bg-base);
+}
+.swipe-front {
+  position: relative;
+  background: var(--surface-1);
+  transform: translateX(-168px);
+  transition: transform 200ms ease-out;
+}
+.swipe-front.closed {
+  transform: none;
+}
+.swipe-front .row {
+  width: 100%;
+  box-sizing: border-box;
+  background: transparent;
+  border: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+/* Bandeau d'état de connexion */
+.net-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+}
+.spin {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2.5px solid var(--line);
+  border-top-color: var(--accent);
+  animation: spinr 0.8s linear infinite;
+}
+@keyframes spinr {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.pull {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  height: 56px;
+  color: var(--ink-muted);
+  font: 500 14px/20px var(--font-sans);
+}
+
+/* Pages publiques (aide, confidentialité) */
+.pub {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-base);
+  color: var(--ink);
+  font-family: var(--font-sans);
+}
+.pub-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  max-width: var(--layout-landing);
+  width: 100%;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+.pub-main {
+  flex: 1;
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-4) var(--space-16);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+.pub-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-6);
+  justify-content: center;
+  padding: var(--space-6) var(--space-4);
+  border-top: 1px solid var(--line);
+  color: var(--ink-muted);
+  font-size: 14px;
+}
+.pub-foot a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--ink-muted);
+}
+.pub h2 {
+  margin: 0;
+  font: 600 20px/28px var(--font-display);
+}
+.pub p {
+  margin: 0;
+}
+.pub .anchor {
+  scroll-margin-top: 16px;
+}
+.notice {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+  font-size: 14px;
+  line-height: 20px;
+}
+.notice::before {
+  content: "!";
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--warn);
+  color: var(--bg-base);
+  font: 700 12px/1 var(--font-sans);
+}
+.faq-item {
+  border-bottom: 1px solid var(--line);
+}
+.faq-item:last-child {
+  border-bottom: 0;
+}
+.faq-item summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-height: 56px;
+  cursor: pointer;
+  list-style: none;
+  font: 600 16px/24px var(--font-display);
+}
+.faq-item summary::-webkit-details-marker {
+  display: none;
+}
+.faq-item summary::after {
+  content: "";
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-right: 2px solid var(--ink-muted);
+  border-bottom: 2px solid var(--ink-muted);
+  transform: rotate(45deg);
+  transition: transform 150ms ease-out;
+}
+.faq-item[open] summary::after {
+  transform: rotate(-135deg);
+}
+.faq-item summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+.faq-item .faq-a {
+  padding: 0 0 var(--space-4);
+  color: var(--ink-muted);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  align-items: flex-start;
+}
+textarea.input {
+  height: auto;
+  min-height: 132px;
+  padding: var(--space-3) var(--space-4);
+  resize: vertical;
+}
+.toc {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.toc a.chip {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+.step-n {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font: 600 15px/1 var(--font-display);
+}
+
+/* Chargement et erreur : gabarit partagé */
+.err-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-6);
+  border-radius: var(--radius-lg);
+  background: var(--surface-1);
+}
+
+.sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+/* Contraste : les champs ont un contour de 3:1 minimum (WCAG 1.4.11) */
+.input,
+.pct-input {
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+}
+.input[aria-invalid="true"] {
+  box-shadow: inset 0 0 0 2px var(--over);
+}

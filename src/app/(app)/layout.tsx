@@ -3,7 +3,8 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { getSession } from "@/lib/auth";
 import { SideNav } from "@/components/nav/SideNav";
-import { TabBar } from "@/components/nav/TabBar";
+import { TabBarWrap } from "@/components/nav/TabBarWrap";
+import { FabProvider } from "@/components/nav/FabContext";
 import { ServiceWorkerRegister } from "@/components/pwa/ServiceWorkerRegister";
 import { InstallManager } from "@/components/pwa/InstallManager";
 
@@ -12,22 +13,29 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
+/**
+ * Coquille de l'espace client — structure fidèle au canvas de design
+ * (`.app` > `.sidenav` + `.main > .content` + `.tabbar-wrap` > `.tabbar`).
+ * Bureau (≥1024 px) : menu latéral. Mobile/tablette : barre d'onglets en
+ * bas — bascule gérée par app-shell.css, pas de JS ni de media query ici.
+ */
 export default async function AppLayout({ children }: { children: ReactNode }) {
   const session = await getSession();
   if (!session) redirect("/connexion");
 
   return (
-    <div className="flex min-h-full">
-      <ServiceWorkerRegister />
-      <InstallManager />
-      <SideNav />
-      <main
-        id="contenu"
-        className="mx-auto w-full max-w-[1120px] px-4 sm:px-8 lg:px-6 py-6 pb-24 lg:pb-6"
-      >
-        {children}
-      </main>
-      <TabBar />
-    </div>
+    <FabProvider>
+      <div className="app" style={{ minHeight: "100vh" }}>
+        <ServiceWorkerRegister />
+        <InstallManager />
+        <SideNav />
+        <main className="main">
+          <div className="content" id="contenu">
+            {children}
+          </div>
+        </main>
+        <TabBarWrap />
+      </div>
+    </FabProvider>
   );
 }

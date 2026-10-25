@@ -1,31 +1,32 @@
-import { Skeleton } from "@/components/ui/Skeleton";
-
 export default function MoisLoading() {
   return (
-    <div
-      role="status"
-      aria-busy="true"
-      className="stack"
-      style={{ display: "flex", flexDirection: "column", gap: 24 }}
-    >
-      <span className="sr-only" style={{ position: "absolute", left: -9999 }}>
-        Chargement
-      </span>
-      <Skeleton width={180} height={28} />
-      <div className="card card-lg">
-        <Skeleton width={120} height={16} className="mb-2" />
-        <Skeleton width={220} height={48} />
-        <Skeleton height={8} className="mt-4" />
-      </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 16 }}>
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="card">
-            <Skeleton width={100} height={16} className="mb-2" />
-            <Skeleton width={140} height={24} className="mb-2" />
-            <Skeleton height={8} />
+    <div className="dash" aria-busy="true" role="status">
+      <span className="sr">Chargement de ton mois</span>
+      <section className="a-bal">
+        <div className="card stack" style={{ padding: "var(--space-6)" }}>
+          <div className="skel" style={{ width: 96, height: 14 }} />
+          <div className="skel" style={{ width: 240, height: 52 }} />
+          <div className="skel" style={{ height: 8, borderRadius: 999 }} />
+          <div className="skel" style={{ width: "70%", height: 14 }} />
+          <div className="stats">
+            <div className="skel" style={{ height: 40 }} />
+            <div className="skel" style={{ height: 40 }} />
+            <div className="skel" style={{ height: 40 }} />
           </div>
-        ))}
-      </div>
+        </div>
+      </section>
+      <section className="a-cats">
+        <div className="skel" style={{ width: 140, height: 14, marginBottom: "var(--space-3)" }} />
+        <div className="cat-grid">
+          <div className="skel" style={{ height: 150, borderRadius: 20 }} />
+          <div className="skel" style={{ height: 150, borderRadius: 20 }} />
+          <div className="skel" style={{ height: 150, borderRadius: 20 }} />
+          <div className="skel" style={{ height: 150, borderRadius: 20 }} />
+        </div>
+      </section>
+      <section className="a-proj">
+        <div className="skel" style={{ height: 230, borderRadius: 20 }} />
+      </section>
     </div>
   );
 }
