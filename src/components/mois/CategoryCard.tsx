@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { CategoryIcon } from "@/components/ui/Icons";
+import { categoryClass } from "@/lib/categories";
 import { formatMontant } from "@/lib/format";
 
 interface CategoryCardProps {
@@ -11,17 +12,9 @@ interface CategoryCardProps {
   lineCount: number;
 }
 
-const KIND_CLASS: Record<string, string> = {
-  FIXED: "c-fixed",
-  SAVINGS: "c-savings",
-  FAMILY: "c-family",
-  POCKET: "c-pocket",
-  CUSTOM: "c-other",
-};
-
 /** Carte de catégorie de la grille "Où va ton revenu" — fidèle à `Mois.dc.html`. */
 export function CategoryCard({ id, name, kind, total, part, lineCount }: CategoryCardProps) {
-  const cls = KIND_CLASS[kind] ?? "c-other";
+  const cls = categoryClass(kind);
 
   return (
     <Link href={`/categorie/${id}`} className={`card stack ${cls}`} style={{ textDecoration: "none", color: "inherit" }}>

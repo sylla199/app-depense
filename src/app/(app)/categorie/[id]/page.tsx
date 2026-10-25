@@ -1,7 +1,9 @@
 import { notFound, redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { getOrCreateMoisCourant } from "@/lib/month";
+import { getOrCreateMoisCourant, anneeMoisCourants } from "@/lib/month";
+import { revenuDuMois } from "@/lib/calculations";
+import { formatMoisEnLettres } from "@/lib/format";
 import { CategorieDetail } from "@/components/categorie/CategorieDetail";
 
 export default async function CategoriePage({ params }: { params: Promise<{ id: string }> }) {
@@ -13,16 +15,18 @@ export default async function CategoriePage({ params }: { params: Promise<{ id: 
   if (!category) notFound();
 
   const mois = await getOrCreateMoisCourant(session.userId);
-  const [lines, categories] = await Promise.all([
+  const [lines, categories, revenueSources] = await Promise.all([
     db.line.findMany({ where: { monthId: mois.id, categoryId: id }, orderBy: { order: "asc" } }),
     db.category.findMany({ where: { userId: session.userId }, orderBy: { order: "asc" } }),
+    db.revenueSource.findMany({ where: { userId: session.userId } }),
   ]);
 
   const totalPlanned = lines.reduce((sum, l) => sum + l.planned, 0);
+  const { year, month } = anneeMoisCourants();
 
   return (
     <CategorieDetail
-      category={{ id: category.id, name: category.name }}
+      category={{ id: category.id, name: category.name, kind: category.kind }}
       lines={lines.map((l) => ({
         id: l.id,
         name: l.name,
@@ -34,6 +38,8 @@ export default async function CategoriePage({ params }: { params: Promise<{ id: 
       }))}
       categories={categories.map((c) => ({ id: c.id, name: c.name, kind: c.kind }))}
       totalPlanned={totalPlanned}
+      revenu={revenuDuMois(revenueSources)}
+      moisLabel={formatMoisEnLettres(year, month)}
     />
   );
 }

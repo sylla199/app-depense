@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
@@ -7,21 +8,28 @@ import { Modal } from "@/components/ui/Modal";
 import { UndoSnackbar } from "@/components/ui/UndoSnackbar";
 import { LineForm, type CategoryOption, type LineData } from "@/components/categorie/LineForm";
 import { LineRow } from "@/components/categorie/LineRow";
-import { formatFcfa } from "@/lib/format";
+import { CategoryIcon, IconChevronLeft, IconPlus } from "@/components/ui/Icons";
+import { useFab } from "@/components/nav/FabContext";
+import { categoryClass } from "@/lib/categories";
+import { ecartLigne } from "@/lib/calculations";
+import { formatMontant } from "@/lib/format";
 
 interface CategorieDetailProps {
-  category: { id: string; name: string };
+  category: { id: string; name: string; kind: string };
   lines: LineData[];
   categories: CategoryOption[];
   totalPlanned: number;
+  revenu: number;
+  moisLabel: string;
 }
 
 type ModalState = "create" | { line: LineData } | null;
 
-export function CategorieDetail({ category, lines, categories, totalPlanned }: CategorieDetailProps) {
+export function CategorieDetail({ category, lines, categories, totalPlanned, revenu, moisLabel }: CategorieDetailProps) {
   const router = useRouter();
   const [modal, setModal] = useState<ModalState>(null);
   const [snackbar, setSnackbar] = useState<{ message: string; restore: LineData } | null>(null);
+  useFab({ label: "Ajouter une ligne", onClick: () => setModal("create") });
 
   function refresh() {
     setModal(null);
@@ -53,51 +61,94 @@ export function CategorieDetail({ category, lines, categories, totalPlanned }: C
     router.refresh();
   }
 
+  const pct = revenu > 0 ? Math.round((totalPlanned / revenu) * 100) : 0;
+  const nFixed = lines.filter((l) => l.isFixed).length;
+  const ecartTotal = lines.reduce((sum, l) => {
+    const e = ecartLigne({ categoryId: l.categoryId, planned: l.planned, actual: l.actual });
+    return sum + (e ?? 0);
+  }, 0);
+  const cls = categoryClass(category.kind);
+
   return (
     <div>
-      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 16 }}>
-        <div>
-          <h1 className="t-lg" style={{ margin: 0 }}>
-            {category.name}
-          </h1>
-          <p className="caption" style={{ margin: 0 }}>
-            {lines.length} {lines.length === 1 ? "ligne" : "lignes"} · prévu {formatFcfa(totalPlanned)}
-          </p>
+      <div className="screen-head">
+        <Link className="back" href="/mois">
+          <IconChevronLeft />
+          {moisLabel}
+        </Link>
+        <div className="head-actions">
+          <Button size="sm" className="hide-mobile" onClick={() => setModal("create")}>
+            <IconPlus />
+            Ajouter une ligne
+          </Button>
         </div>
-        <Button onClick={() => setModal("create")} className="show-desktop-only">
-          Ajouter une ligne
-        </Button>
       </div>
 
-      {lines.length === 0 ? (
-        <div className="card" style={{ textAlign: "center", padding: 48 }}>
-          <p>Ajoute une première ligne à cette catégorie.</p>
-        </div>
-      ) : (
-        <div className="card">
-          {lines.map((line) => (
-            <LineRow
-              key={line.id}
-              name={line.name}
-              planned={line.planned}
-              actual={line.actual}
-              isFixed={line.isFixed}
-              onClick={() => setModal({ line })}
-            />
-          ))}
-        </div>
-      )}
+      <div className="cols-main">
+        <section className={`card ${cls}`} style={{ padding: "var(--space-4) var(--space-4) var(--space-2)" }}>
+          <div className="sec-title" style={{ padding: "var(--space-2) 0 var(--space-1)" }}>
+            <h2 className="screen-title" style={{ margin: 0 }}>
+              {category.name}
+            </h2>
+            <span className="caption">
+              {lines.length} {lines.length === 1 ? "ligne" : "lignes"} · prévu {formatMontant(totalPlanned)} FCFA
+            </span>
+          </div>
 
-      {/* Bouton flottant mobile/tablette (le bouton d'en-tête est masqué en dessous de 1024 px). */}
-      <button
-        type="button"
-        className="btn btn-primary show-mobile-only"
-        style={{ position: "fixed", right: 16, bottom: 96, zIndex: 20 }}
-        onClick={() => setModal("create")}
-        aria-label="Ajouter une ligne"
-      >
-        + Ajouter
-      </button>
+          {lines.length === 0 ? (
+            <p className="muted" style={{ padding: "var(--space-4) 0" }}>
+              Ajoute une première ligne à cette catégorie.
+            </p>
+          ) : (
+            lines.map((line) => (
+              <LineRow
+                key={line.id}
+                name={line.name}
+                planned={line.planned}
+                actual={line.actual}
+                isFixed={line.isFixed}
+                categoryKind={category.kind}
+                onClick={() => setModal({ line })}
+              />
+            ))
+          )}
+        </section>
+
+        <aside className={`card stack ${cls}`} style={{ padding: "var(--space-6)" }}>
+          <div className="cat-head">
+            <div className="row-icon">
+              <CategoryIcon kind={category.kind} />
+            </div>
+            <div className="row-main">
+              <div className="row-title">{category.name}</div>
+              <div className="row-sub">Catégorie</div>
+            </div>
+          </div>
+          <div className="label" style={{ marginTop: "var(--space-2)" }}>
+            Total de la catégorie
+          </div>
+          <div className="t-xl">{formatMontant(totalPlanned)}&nbsp;FCFA</div>
+          <div className="meter cat" role="img" aria-label={`${pct} % du revenu`}>
+            <span style={{ width: `${Math.min(100, pct)}%` }} />
+          </div>
+          <div className="caption">
+            {pct} % du revenu · sur {formatMontant(revenu)}&nbsp;FCFA
+          </div>
+          <div className="field">
+            <span className="muted">Lignes fixes reportées chaque mois</span>
+            <span className="num">{nFixed}</span>
+          </div>
+          {ecartTotal !== 0 ? (
+            <div className="field">
+              <span className="muted">Écart total avec le prévu</span>
+              <span className="num" style={{ color: ecartTotal < 0 ? "var(--over)" : "var(--income)" }}>
+                {ecartTotal > 0 ? "+" : ""}
+                {formatMontant(ecartTotal)} FCFA
+              </span>
+            </div>
+          ) : null}
+        </aside>
+      </div>
 
       {modal ? (
         <Modal
@@ -117,11 +168,7 @@ export function CategorieDetail({ category, lines, categories, totalPlanned }: C
       ) : null}
 
       {snackbar ? (
-        <UndoSnackbar
-          message={snackbar.message}
-          onUndo={onUndo}
-          onDismiss={() => setSnackbar(null)}
-        />
+        <UndoSnackbar message={snackbar.message} onUndo={onUndo} onDismiss={() => setSnackbar(null)} />
       ) : null}
     </div>
   );

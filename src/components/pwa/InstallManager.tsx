@@ -57,7 +57,7 @@ export function InstallManager() {
       // Une autre modale est déjà ouverte (ex. le visiteur a été assez
       // rapide pour démarrer une autre action) : on laisse la main, sans
       // marquer "vu" — ça réessaiera à la prochaine visite de /mois.
-      if (!seen && !document.querySelector(".modal-overlay")) setOpen(true);
+      if (!seen && !document.querySelector(".scrim")) setOpen(true);
     }, 1500); // laisse une chance à beforeinstallprompt de se déclencher avant d'ouvrir
 
     return () => {

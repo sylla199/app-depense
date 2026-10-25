@@ -27,3 +27,15 @@ export const CATEGORY_COLOR_PALETTE = [
   "cat-project",
   "cat-other",
 ] as const;
+
+/** Classe `.c-*` (pose `--c`) du design system pour une catégorie, par type. */
+const KIND_TO_CLASS: Record<string, string> = {
+  FIXED: "c-fixed",
+  SAVINGS: "c-savings",
+  FAMILY: "c-family",
+  POCKET: "c-pocket",
+  CUSTOM: "c-other",
+};
+export function categoryClass(kind: string): string {
+  return KIND_TO_CLASS[kind] ?? "c-other";
+}
