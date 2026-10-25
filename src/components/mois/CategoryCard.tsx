@@ -17,7 +17,7 @@ export function CategoryCard({ id, name, kind, total, part, lineCount }: Categor
   const cls = categoryClass(kind);
 
   return (
-    <Link href={`/categorie/${id}`} className={`card stack ${cls}`} style={{ textDecoration: "none", color: "inherit" }}>
+    <Link href={`/categorie/${id}`} className={`card stack link-row ${cls}`} style={{ textDecoration: "none", color: "inherit" }}>
       <div className="cat-head">
         <div className="row-icon">
           <CategoryIcon kind={kind} />
@@ -31,7 +31,10 @@ export function CategoryCard({ id, name, kind, total, part, lineCount }: Categor
       </div>
       <div className="t-md">{formatMontant(total)} FCFA</div>
       <div className="meter cat" role="img" aria-label={`${part} % du revenu`}>
-        <span style={{ width: `${Math.min(100, part)}%` }} />
+        {/* `minWidth` en pixels plutôt qu'un plancher en %, pour qu'une
+            valeur faible (4 %) reste un segment lisible plutôt qu'un point —
+            un plancher en % se réduirait avec la carte à largeur fixe. */}
+        <span style={{ width: `${Math.min(100, part)}%`, minWidth: part > 0 ? "16px" : 0 }} />
       </div>
       <div className="caption">{part} % du revenu</div>
     </Link>

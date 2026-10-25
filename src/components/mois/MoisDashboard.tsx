@@ -53,18 +53,24 @@ export function MoisDashboard({
   const [bannerOpen, setBannerOpen] = useState(true);
   useFab({ label: "Ajouter une ligne", href: ajoutHref });
 
+  // Un mois sans aucun revenu configuré (toutes les sources supprimées
+  // depuis /revenus, rien ne l'empêche) donne aussi revenu=0 et affecte=0,
+  // donc restant=0 — à distinguer d'un vrai "mois bouclé", sous peine de
+  // féliciter l'utilisateur pour un budget qui n'existe tout simplement pas.
+  const revenuManquant = revenu === 0;
   const pct = revenu > 0 ? Math.round((affecte / revenu) * 100) : 0;
   const meterW = Math.min(100, pct);
-  const meterCls = restant < 0 ? "over" : restant === 0 ? "ok" : "";
-  const caption =
-    restant === 0
+  const meterCls = restant < 0 ? "over" : restant === 0 && !revenuManquant ? "ok" : "";
+  const caption = revenuManquant
+    ? "Ajoute ton revenu pour voir ton restant se calculer"
+    : restant === 0
       ? `${pct} % du revenu affecté · chaque franc est à sa place`
       : restant > 0
         ? `${pct} % du revenu affecté · ${formatMontant(restant)} FCFA à répartir`
         : `${pct} % du revenu affecté · ${formatMontant(Math.abs(restant))} FCFA de trop`;
 
-  const showCelebrate = restant === 0 && bannerOpen;
-  const showDelta = restant === 0 && !bannerOpen;
+  const showCelebrate = !revenuManquant && restant === 0 && bannerOpen;
+  const showDelta = !revenuManquant && restant === 0 && !bannerOpen;
 
   const projRows = [
     { label: "Dans 1 mois", value: epargneMensuelle },
@@ -75,6 +81,20 @@ export function MoisDashboard({
 
   return (
     <>
+      {revenuManquant ? (
+        <div className="card" style={{ display: "flex", alignItems: "center", gap: "var(--space-3)", flexWrap: "wrap" }}>
+          <div className="row-main" style={{ minWidth: 200 }}>
+            <div className="row-title" style={{ whiteSpace: "normal" }}>
+              Aucun revenu configuré pour ce mois.
+            </div>
+            <div className="row-sub">Ajoute une source de revenu pour voir ton restant se calculer.</div>
+          </div>
+          <Link className="btn btn-secondary btn-sm" href="/revenus">
+            Ajouter un revenu
+          </Link>
+        </div>
+      ) : null}
+
       {showCelebrate ? (
         <div className="celebrate" role="status">
           <div className="celebrate-icon">
