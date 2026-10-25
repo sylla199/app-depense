@@ -116,3 +116,15 @@ export const elementProjetCreateSchema = z.object({
 export const elementProjetUpdateSchema = elementProjetCreateSchema.partial().extend({
   purchased: z.boolean().optional(),
 });
+
+// --- Import CSV (F12) ----------------------------------------------------
+
+export const importRowSchema = z.object({
+  categoryName: nomSchema,
+  name: nomSchema,
+  planned: montantPositifSchema,
+});
+
+export const importSchema = z.object({
+  rows: z.array(importRowSchema).min(1, { message: "Aucune ligne valide à importer." }),
+});

@@ -1,5 +1,6 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { InstallGuideContent } from "@/components/pwa/InstallGuideContent";
@@ -18,13 +19,24 @@ interface BeforeInstallPromptEvent extends Event {
  * réglages"). Sur Android, capte `beforeinstallprompt` pour proposer un
  * bouton d'installation natif en un geste ; sur iPhone, Safari n'expose
  * aucune API équivalente — seul le guide existe.
+ *
+ * Ce composant vit dans `(app)/layout.tsx`, monté une seule fois pour
+ * toutes les pages de l'espace client (le layout persiste entre deux pages
+ * sœurs dans l'App Router) : sans garde-fous, son délai de 1,5 s pourrait
+ * se déclencher pendant qu'un visiteur remplit un autre formulaire (trouvé
+ * en testant l'import CSV). Deux garde-fous : ne s'arme que sur /mois (le
+ * point d'arrivée naturel), et ne s'ouvre pas par-dessus une modale déjà
+ * affichée (dans ce cas, il réessaiera à la prochaine visite de /mois,
+ * puisque "vu" n'est écrit qu'à la fermeture réelle du guide).
  */
 export function InstallManager() {
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const deferredPrompt = useRef<BeforeInstallPromptEvent | null>(null);
   const [canInstallNative, setCanInstallNative] = useState(false);
 
   useEffect(() => {
+    if (pathname !== "/mois") return;
     if (isStandalone()) return; // déjà installée : rien à proposer
 
     function onBeforeInstallPrompt(event: Event) {
@@ -42,14 +54,17 @@ export function InstallManager() {
     }
 
     const timer = setTimeout(() => {
-      if (!seen) setOpen(true);
+      // Une autre modale est déjà ouverte (ex. le visiteur a été assez
+      // rapide pour démarrer une autre action) : on laisse la main, sans
+      // marquer "vu" — ça réessaiera à la prochaine visite de /mois.
+      if (!seen && !document.querySelector(".modal-overlay")) setOpen(true);
     }, 1500); // laisse une chance à beforeinstallprompt de se déclencher avant d'ouvrir
 
     return () => {
       window.removeEventListener("beforeinstallprompt", onBeforeInstallPrompt);
       clearTimeout(timer);
     };
-  }, []);
+  }, [pathname]);
 
   function close() {
     setOpen(false);

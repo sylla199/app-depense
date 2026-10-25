@@ -66,6 +66,25 @@ ligne avec explication (`useOnlineStatus`).
 - **`/og-apercu.png`** (image de partage 1200×630, section PWA/SEO du
   handoff) : toujours pas de fichier généré, `openGraph.images` reste donc
   absent de `app/page.tsx` plutôt que de pointer vers une image qui n'existe pas.
+- Le guide d'installation auto-affiché ne s'arme que sur `/mois` (le point
+  d'arrivée) et ne s'ouvre jamais par-dessus une autre modale déjà affichée —
+  trouvé en testant l'import CSV (jalon 5) : le composant vit dans `(app)/
+  layout.tsx`, qui persiste entre deux pages sœurs dans l'App Router, donc son
+  minuteur de 1,5 s continuait de courir après une navigation et pouvait
+  interrompre un formulaire en cours de remplissage ailleurs.
+
+**Jalon 5 construit (F12, dernier module du MVP)** : import du tableur en 3
+étapes (dépose du CSV, association des colonnes, vérification avant
+création), `/importer`, accessible depuis Réglages et depuis l'état vide de
+l'Historique. Associe chaque catégorie du CSV à une catégorie existante
+(nom, insensible à la casse) ou en crée une nouvelle (`cat-other`) ; crée les
+lignes dans le mois courant ; rien n'est créé avant "Créer mes lignes"
+(dernière étape). Lignes au montant ou à la catégorie manquant/illisible :
+ignorées et listées par numéro, le reste de l'import continue.
+
+**Le MVP (sections 4 et 5 du cahier des charges) est maintenant complet au
+sens fonctionnel.** Reste : fidélité visuelle au canvas de design (prochaine
+étape demandée par Sylla), puis les points V2/hors-MVP ci-dessous.
 
 **Pas encore construits** (stubs "Bientôt" dans la navigation, pas de 404) :
 - Mode discret : le réglage est persisté (`User.discreetMode`, route `PATCH
@@ -75,7 +94,6 @@ ligne avec explication (`useOnlineStatus`).
   classe CSS).
 - Thème sombre, code PIN (V2) : tokens prêts dans `tokens.css`
   (`[data-theme="dark"]`), rien ne les active dans l'UI.
-- Import CSV du tableur (F12).
 - Rappels (F13, V2).
 - Réinitialisation du mot de passe par e-mail (F1, Must — reporté : nécessite
   un fournisseur d'envoi d'e-mails à brancher, ex. Resend/Postmark).
@@ -83,8 +101,12 @@ ligne avec explication (`useOnlineStatus`).
   **le texte légal reste à rédiger et à faire relire par un juriste** avant
   toute mise en ligne (la landing y renvoie déjà par ancre).
 
-Prochain jalon suggéré, dans l'ordre du cahier des charges (section 9) :
-import CSV (F12), seul module restant du périmètre MVP.
+Prochaine étape demandée par Sylla : reprendre chaque écran déjà construit
+en lisant les vrais fichiers `.dc.html` du canvas de design (artifact
+"Gérer mes dépenses — Interface") pour aligner la mise en page, la
+hiérarchie visuelle et les icônes sur le design réel — jusqu'ici, les écrans
+ont été construits à partir des tokens et classes de composants du handoff
+(texte), jamais en lisant les écrans eux-mêmes.
 
 ## Stack technique
 

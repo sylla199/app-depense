@@ -113,6 +113,12 @@ export function HistoriqueManager({
       {months.length === 0 ? (
         <div className="card" style={{ textAlign: "center", padding: 48 }}>
           <p>Aucun mois pour l&apos;instant.</p>
+          <p className="caption" style={{ margin: "8px 0 16px" }}>
+            Importe ton tableur actuel pour démarrer sans tout ressaisir.
+          </p>
+          <Link href="/importer" className="btn btn-primary">
+            Importer un tableur
+          </Link>
         </div>
       ) : (
         <div className="card">

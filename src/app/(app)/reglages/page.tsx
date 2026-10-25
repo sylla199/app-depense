@@ -43,6 +43,9 @@ export default async function ReglagesPage() {
           Application
         </p>
         <InstallButton />
+        <Link href="/importer" className="btn btn-secondary btn-block" style={{ marginTop: 12 }}>
+          Importer un tableur
+        </Link>
       </div>
 
       <DonneesCard />
