@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, type ReactNode } from "react";
+import { useEffect, useId, useRef, useSyncExternalStore, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useMediaQuery } from "@/lib/useMediaQuery";
 import { IconClose } from "@/components/ui/Icons";
@@ -13,6 +13,10 @@ interface ModalProps {
 
 const FOCUSABLE_SELECTOR =
   'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+
+function noopSubscribe() {
+  return () => {};
+}
 
 /**
  * Feuille du bas (mobile) / dialogue centré (bureau+tablette) — classes
@@ -29,6 +33,15 @@ export function Modal({ title, onClose, children }: ModalProps) {
   const titleId = useId();
   const previouslyFocused = useRef<HTMLElement | null>(null);
   const isDesktop = useMediaQuery("(min-width: 640px)");
+  // `createPortal` a besoin de `document.body`, absent au rendu serveur.
+  // Si un appelant ouvre la modale dès l'état initial (ex. formulaire
+  // pré-rempli depuis un paramètre d'URL), le premier rendu peut avoir
+  // lieu côté serveur : on ne monte le portail qu'une fois côté client.
+  const mounted = useSyncExternalStore(
+    noopSubscribe,
+    () => true,
+    () => false
+  );
 
   useEffect(() => {
     previouslyFocused.current = document.activeElement as HTMLElement | null;
@@ -63,6 +76,8 @@ export function Modal({ title, onClose, children }: ModalProps) {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  if (!mounted) return null;
 
   return createPortal(
     <>

@@ -21,13 +21,16 @@ interface CategorieDetailProps {
   totalPlanned: number;
   revenu: number;
   moisLabel: string;
+  /** Montant repris du restant du mois (bouton "Affecter à l'épargne" de
+   *  `/mois`, via `?montant=`) : ouvre le formulaire d'ajout pré-rempli. */
+  initialPlanned?: number;
 }
 
 type ModalState = "create" | { line: LineData } | null;
 
-export function CategorieDetail({ category, lines, categories, totalPlanned, revenu, moisLabel }: CategorieDetailProps) {
+export function CategorieDetail({ category, lines, categories, totalPlanned, revenu, moisLabel, initialPlanned }: CategorieDetailProps) {
   const router = useRouter();
-  const [modal, setModal] = useState<ModalState>(null);
+  const [modal, setModal] = useState<ModalState>(initialPlanned ? "create" : null);
   const [snackbar, setSnackbar] = useState<{ message: string; restore: LineData } | null>(null);
   useFab({ label: "Ajouter une ligne", onClick: () => setModal("create") });
 
@@ -157,6 +160,8 @@ export function CategorieDetail({ category, lines, categories, totalPlanned, rev
             initial={modal === "create" ? undefined : modal.line}
             categories={categories}
             defaultCategoryId={category.id}
+            defaultPlanned={modal === "create" ? initialPlanned : undefined}
+            defaultCountsInProjection={modal === "create" && category.kind === "SAVINGS" ? true : undefined}
             onSaved={refresh}
             onDeleted={onDeleted}
             onCancel={() => setModal(null)}

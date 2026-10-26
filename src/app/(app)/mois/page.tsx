@@ -129,6 +129,8 @@ export default async function MoisPage({
   const resteParSemaine = estMoisCourant ? argentPocheParSemaine(resteParJour) : 0;
 
   const firstCategoryHref = `/categorie/${categories[0]?.id ?? ""}`;
+  const savingsCategory = categories.find((c) => c.kind === "SAVINGS");
+  const epargneCategoryHref = `/categorie/${savingsCategory?.id ?? categories[0]?.id ?? ""}`;
   const moisLabel = formatMoisEnLettres(anneeDemandee, moisDemande);
 
   return (
@@ -196,6 +198,7 @@ export default async function MoisPage({
           epargneMensuelle={mensuelle}
           categorieHref={firstCategoryHref}
           ajoutHref={firstCategoryHref}
+          epargneCategoryHref={epargneCategoryHref}
           estMoisCourant={estMoisCourant}
         />
       )}

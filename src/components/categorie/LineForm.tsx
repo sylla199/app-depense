@@ -30,6 +30,10 @@ interface LineFormProps {
   initial?: LineData;
   categories: CategoryOption[];
   defaultCategoryId: string;
+  /** Montant "prévu" de départ en mode création (ex. restant du mois
+   *  repris depuis le bouton "Affecter à l'épargne"). */
+  defaultPlanned?: number;
+  defaultCountsInProjection?: boolean;
   onSaved: () => void;
   onDeleted?: (line: LineData) => void;
   onCancel: () => void;
@@ -50,14 +54,26 @@ function digitsOnly(raw: string): number {
  * y taper), une catégorie qu'on fait défiler, et pas d'interrupteur
  * récurrence (absent de la maquette mobile).
  */
-export function LineForm({ mode, initial, categories, defaultCategoryId, onSaved, onDeleted, onCancel }: LineFormProps) {
+export function LineForm({
+  mode,
+  initial,
+  categories,
+  defaultCategoryId,
+  defaultPlanned,
+  defaultCountsInProjection,
+  onSaved,
+  onDeleted,
+  onCancel,
+}: LineFormProps) {
   const isDesktop = useMediaQuery("(min-width: 640px)");
   const [name, setName] = useState(initial?.name ?? "");
-  const [planned, setPlanned] = useState(initial?.planned ?? 0);
+  const [planned, setPlanned] = useState(initial?.planned ?? defaultPlanned ?? 0);
   const [actual, setActual] = useState(initial?.actual ?? 0);
   const [categoryId, setCategoryId] = useState(initial?.categoryId ?? defaultCategoryId);
   const [isFixed, setIsFixed] = useState(initial?.isFixed ?? false);
-  const [countsInProjection, setCountsInProjection] = useState(initial?.countsInProjection ?? false);
+  const [countsInProjection, setCountsInProjection] = useState(
+    initial?.countsInProjection ?? defaultCountsInProjection ?? false
+  );
   const [target, setTarget] = useState<"planned" | "actual">("planned");
   const [touched, setTouched] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});

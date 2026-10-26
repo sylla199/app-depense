@@ -6,10 +6,18 @@ import { revenuDuMois, totalAffecte } from "@/lib/calculations";
 import { formatMoisEnLettres } from "@/lib/format";
 import { CategorieDetail } from "@/components/categorie/CategorieDetail";
 
-export default async function CategoriePage({ params }: { params: Promise<{ id: string }> }) {
+export default async function CategoriePage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ montant?: string }>;
+}) {
   const session = await getSession();
   if (!session) redirect("/connexion");
   const { id } = await params;
+  const montantParam = (await searchParams).montant;
+  const initialPlanned = montantParam && /^\d+$/.test(montantParam) ? Number(montantParam) : undefined;
 
   const category = await db.category.findFirst({ where: { id, userId: session.userId } });
   if (!category) notFound();
@@ -40,6 +48,7 @@ export default async function CategoriePage({ params }: { params: Promise<{ id: 
       totalPlanned={totalPlanned}
       revenu={revenuDuMois(revenueSources)}
       moisLabel={formatMoisEnLettres(year, month)}
+      initialPlanned={initialPlanned}
     />
   );
 }

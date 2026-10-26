@@ -30,6 +30,7 @@ interface DashboardProps {
   epargneMensuelle: number;
   categorieHref: string;
   ajoutHref: string;
+  epargneCategoryHref: string;
   /** Faux pour un mois passé consulté depuis le menu déroulant : lecture
    *  seule, aucune action d'édition proposée (voir `mois/page.tsx`). */
   estMoisCourant: boolean;
@@ -53,6 +54,7 @@ export function MoisDashboard({
   epargneMensuelle,
   categorieHref,
   ajoutHref,
+  epargneCategoryHref,
   estMoisCourant,
 }: DashboardProps) {
   const [bannerOpen, setBannerOpen] = useState(true);
@@ -167,7 +169,7 @@ export function MoisDashboard({
             <div className="row-sub">Tu peux les affecter à une ligne d&apos;épargne pour boucler le mois à 0.</div>
           </div>
           {estMoisCourant ? (
-            <Link className="btn btn-secondary btn-sm" href={`/epargne?montant=${restant}`}>
+            <Link className="btn btn-secondary btn-sm" href={`${epargneCategoryHref}?montant=${restant}`}>
               Affecter à l&apos;épargne
             </Link>
           ) : null}
