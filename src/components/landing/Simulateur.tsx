@@ -13,7 +13,8 @@ function digitsOnly(raw: string, max: number): number {
 /**
  * Mini-simulateur de la landing (F14, Should) : une vraie calculatrice, sans
  * création de compte. Mêmes pourcentages par défaut que le premier
- * lancement (45/30/5/20). Fidèle à `Landing.dc.html` (section Simulateur).
+ * lancement (`DEFAULT_CATEGORIES`, adapté de la règle 50/30/20). Fidèle à
+ * `Landing.dc.html` (section Simulateur).
  */
 export function Simulateur() {
   const [revenu, setRevenu] = useState(880000);

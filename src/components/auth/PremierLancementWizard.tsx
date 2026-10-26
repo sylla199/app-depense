@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Fragment, useState, type CSSProperties } from "react";
+import { useState, type CSSProperties } from "react";
 import { Button } from "@/components/ui/Button";
 import { montantProposeCategorie } from "@/lib/calculations";
 import { formatFcfa, formatMontant } from "@/lib/format";
@@ -14,8 +14,8 @@ interface CategoryOption {
   defaultPercent: number;
 }
 
-function digitsOnly(raw: string): number {
-  const v = raw.replace(/\D/g, "").slice(0, 9);
+function digitsOnly(raw: string, maxLength = 9): number {
+  const v = raw.replace(/\D/g, "").slice(0, maxLength);
   return v ? parseInt(v, 10) : 0;
 }
 
@@ -29,11 +29,24 @@ export function PremierLancementWizard({ categories }: { categories: CategoryOpt
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [revenu, setRevenu] = useState(0);
+  const [percents, setPercents] = useState<Record<string, number>>(() =>
+    Object.fromEntries(categories.map((c) => [c.id, c.defaultPercent]))
+  );
   const [ligneName, setLigneName] = useState("");
   const [lignePlanned, setLignePlanned] = useState(0);
   const [ligneCategoryId, setLigneCategoryId] = useState(categories[0]?.id ?? "");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
+
+  const totalPercent = Object.values(percents).reduce((sum, p) => sum + p, 0);
+  const percentScale = totalPercent > 100 ? 100 / totalPercent : 1;
+  const totalMessage =
+    totalPercent === 100
+      ? "Total : 100 %. Chaque franc est affecté."
+      : totalPercent < 100
+        ? `Il reste ${100 - totalPercent} % à répartir.`
+        : `Tu dépasses de ${totalPercent - 100} %.`;
+  const totalClass = totalPercent === 100 ? "t-income" : totalPercent > 100 ? "t-over" : "t-ink";
 
   async function onFinish() {
     setErrors({});
@@ -122,29 +135,46 @@ export function PremierLancementWizard({ categories }: { categories: CategoryOpt
                 Répartis ton revenu
               </h1>
               <p className="muted" style={{ margin: 0 }}>
-                Voici une répartition type. Tu ajustes chaque montant ensuite, ligne par ligne.
+                Voici une proposition de départ. Ajuste-la dès maintenant si tu veux, ou change
+                chaque montant plus tard, ligne par ligne.
               </p>
             </div>
             <div className="card stack" style={{ gap: "var(--space-4)" }}>
               <div
                 className="seg"
                 role="img"
-                aria-label={`Répartition : ${categories.map((c) => `${c.defaultPercent} % ${c.name.toLowerCase()}`).join(", ")}`}
+                aria-label={`Répartition : ${categories.map((c) => `${percents[c.id] ?? 0} % ${c.name.toLowerCase()}`).join(", ")}`}
               >
                 {categories.map((c) => (
-                  <span key={c.id} style={{ width: `${c.defaultPercent}%`, "--c": `var(--${c.color})` } as CSSProperties} />
+                  <span
+                    key={c.id}
+                    style={{ width: `${(percents[c.id] ?? 0) * percentScale}%`, "--c": `var(--${c.color})` } as CSSProperties}
+                  />
                 ))}
               </div>
-              <div className="legend">
+              <div className="stack" style={{ gap: "var(--space-3)" }}>
                 {categories.map((c) => (
-                  <Fragment key={c.id}>
+                  <div key={c.id} className="sim-row">
                     <span className="dot" style={{ "--c": `var(--${c.color})` } as CSSProperties} />
-                    <span>
-                      {c.name} · {c.defaultPercent} %
-                    </span>
-                    <span className="row-amount">{formatFcfa(montantProposeCategorie(revenu, c.defaultPercent))}</span>
-                  </Fragment>
+                    <label htmlFor={`onb-pct-${c.id}`}>{c.name}</label>
+                    <input
+                      id={`onb-pct-${c.id}`}
+                      className="pct-input"
+                      type="text"
+                      inputMode="numeric"
+                      autoComplete="off"
+                      value={percents[c.id] ?? 0}
+                      onChange={(e) =>
+                        setPercents((prev) => ({ ...prev, [c.id]: Math.min(100, digitsOnly(e.target.value, 3)) }))
+                      }
+                      aria-label={`${c.name}, en pourcentage`}
+                    />
+                    <span className="row-amount amt">{formatFcfa(montantProposeCategorie(revenu, percents[c.id] ?? 0))}</span>
+                  </div>
                 ))}
+              </div>
+              <div className={`caption ${totalClass}`} role="status" aria-live="polite">
+                {totalMessage}
               </div>
             </div>
             <div className="wrap" style={{ flexWrap: "nowrap" }}>
