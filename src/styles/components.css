@@ -433,27 +433,34 @@ body {
   height: 26px;
 }
 
+/* Fond toujours sombre, comme `.band` sur la landing (même token
+   `--band-deep`) : un bloc de marque volontairement distinct du contenu
+   clair, pas un mode sombre de toute l'app — indépendant du futur réglage
+   "Thème sombre" (V2). */
 .sidenav {
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
   width: var(--layout-sidenav);
   box-sizing: border-box;
-  background: var(--surface-1);
-  border-right: 1px solid var(--line);
+  background: var(--band-deep);
   padding: var(--space-4);
 }
 .sidenav-brand {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-3);
   padding: var(--space-2) var(--space-3) var(--space-6);
-  font-weight: 600;
-  font-size: 16px;
+  color: var(--on-band);
+  font-weight: 700;
+  font-size: 17px;
 }
 .sidenav-brand img {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  background: var(--on-band);
+  padding: 3px;
 }
 .nav-item {
   display: flex;
@@ -462,20 +469,36 @@ body {
   min-height: 44px;
   padding: 0 var(--space-3);
   border-radius: var(--radius-md);
-  color: var(--ink-muted);
+  color: rgb(255 255 255 / 72%);
   font: 500 15px/1 var(--font-sans);
   text-decoration: none;
+  transition: background-color 0.15s, color 0.15s;
+}
+.nav-item:hover {
+  background: rgb(255 255 255 / 8%);
+  color: var(--on-band);
 }
 .nav-item[aria-current="page"] {
-  background: var(--accent-soft);
-  color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+  box-shadow: 0 4px 12px rgb(0 0 0 / 25%);
+}
+.nav-item[aria-current="page"]:hover {
+  background: var(--accent);
+}
+.nav-item[aria-disabled="true"] {
+  opacity: 0.55;
+}
+.nav-item[aria-disabled="true"]:hover {
+  background: transparent;
+  color: rgb(255 255 255 / 72%);
 }
 .nav-item .tag {
   margin-left: auto;
 }
 .nav-sep {
   height: 1px;
-  background: var(--line);
+  background: rgb(255 255 255 / 14%);
   margin: var(--space-3) 0;
 }
 
