@@ -4,7 +4,9 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState, type CSSProperties } from "react";
 import { Button } from "@/components/ui/Button";
+import { IconPlus, IconTrash } from "@/components/ui/Icons";
 import { montantProposeCategorie } from "@/lib/calculations";
+import { CATEGORY_COLOR_PALETTE } from "@/lib/categories";
 import { formatFcfa, formatMontant } from "@/lib/format";
 
 interface CategoryOption {
@@ -13,6 +15,15 @@ interface CategoryOption {
   color: string;
   defaultPercent: number;
 }
+
+const COLOR_NAMES: Record<string, string> = {
+  "cat-project": "Rose",
+  "cat-fixed": "Bleu-gris",
+  "cat-savings": "Jaune",
+  "cat-family": "Violet",
+  "cat-pocket": "Vert",
+  "cat-other": "Gris",
+};
 
 function digitsOnly(raw: string, maxLength = 9): number {
   const v = raw.replace(/\D/g, "").slice(0, maxLength);
@@ -38,6 +49,54 @@ export function PremierLancementWizard({ categories }: { categories: CategoryOpt
   const [ligneCategoryId, setLigneCategoryId] = useState(categories[0]?.id ?? "");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
+  const [creatingCategorie, setCreatingCategorie] = useState(false);
+  const [newCategorieName, setNewCategorieName] = useState("");
+  const [newCategorieColor, setNewCategorieColor] = useState<string>(CATEGORY_COLOR_PALETTE[0]);
+  const [categorieError, setCategorieError] = useState<string | null>(null);
+  const [categorieSubmitting, setCategorieSubmitting] = useState(false);
+
+  // La catégorie choisie pour la première ligne (étape 3) peut avoir été
+  // supprimée à l'étape 2 : on retombe sur la première catégorie restante
+  // plutôt que de garder une référence à une catégorie qui n'existe plus.
+  const ligneCategoryIdValide = categories.some((c) => c.id === ligneCategoryId)
+    ? ligneCategoryId
+    : (categories[0]?.id ?? "");
+
+  async function createCategorie() {
+    setCategorieError(null);
+    if (!newCategorieName.trim()) {
+      setCategorieError("Donne un nom à ta catégorie.");
+      return;
+    }
+    setCategorieSubmitting(true);
+    try {
+      const res = await fetch("/api/categories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newCategorieName, color: newCategorieColor }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        setCategorieError(data.errors?.name ?? "Une erreur est survenue.");
+        return;
+      }
+      setNewCategorieName("");
+      setCreatingCategorie(false);
+      router.refresh();
+    } finally {
+      setCategorieSubmitting(false);
+    }
+  }
+
+  async function deleteCategorie(id: string) {
+    setMontantsEdites((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+    await fetch(`/api/categories/${id}`, { method: "DELETE" });
+    router.refresh();
+  }
 
   function montantCategorie(c: CategoryOption): number {
     return montantsEdites[c.id] ?? montantProposeCategorie(revenu, c.defaultPercent);
@@ -70,7 +129,7 @@ export function PremierLancementWizard({ categories }: { categories: CategoryOpt
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           revenu,
-          premiereLigne: { name: ligneName, planned: lignePlanned, categoryId: ligneCategoryId },
+          premiereLigne: { name: ligneName, planned: lignePlanned, categoryId: ligneCategoryIdValide },
         }),
       });
       const data = await res.json();
@@ -162,7 +221,11 @@ export function PremierLancementWizard({ categories }: { categories: CategoryOpt
 
               <div className="stack" style={{ gap: "var(--space-3)" }}>
                 {categories.map((c) => (
-                  <div key={c.id} className="sim-row" style={{ gridTemplateColumns: "auto minmax(0,1fr) 44px 130px" }}>
+                  <div
+                    key={c.id}
+                    className="sim-row"
+                    style={{ gridTemplateColumns: "auto minmax(0,1fr) 44px 130px 44px" }}
+                  >
                     <span className="dot" style={{ "--c": `var(--${c.color})` } as CSSProperties} />
                     <label htmlFor={`onb-montant-${c.id}`}>{c.name}</label>
                     <span className="caption" style={{ textAlign: "right" }}>
@@ -182,9 +245,87 @@ export function PremierLancementWizard({ categories }: { categories: CategoryOpt
                       }
                       aria-label={`${c.name}, montant en FCFA`}
                     />
+                    <button
+                      type="button"
+                      className="icon-btn"
+                      aria-label={`Supprimer la catégorie ${c.name}`}
+                      onClick={() => deleteCategorie(c.id)}
+                      disabled={categories.length <= 1}
+                    >
+                      <IconTrash />
+                    </button>
                   </div>
                 ))}
               </div>
+
+              {creatingCategorie ? (
+                <form
+                  className="inline-form"
+                  onSubmit={(e) => e.preventDefault()}
+                  aria-labelledby="onb-nc-t"
+                  style={{ marginTop: "var(--space-2)" }}
+                >
+                  <h2 id="onb-nc-t" className="screen-title" style={{ margin: 0, fontSize: 16 }}>
+                    Nouvelle catégorie
+                  </h2>
+                  <div className="field-box">
+                    <label className="label" htmlFor="onb-nc-name">
+                      Nom
+                    </label>
+                    <input
+                      id="onb-nc-name"
+                      className="input"
+                      type="text"
+                      placeholder="Ex. Santé"
+                      value={newCategorieName}
+                      onChange={(e) => setNewCategorieName(e.target.value)}
+                    />
+                    {categorieError ? (
+                      <div className="field-error" role="alert">
+                        {categorieError}
+                      </div>
+                    ) : null}
+                  </div>
+                  <div className="field-box">
+                    <span className="label" id="onb-nc-col">
+                      Couleur
+                    </span>
+                    <div className="wrap" role="group" aria-labelledby="onb-nc-col">
+                      {CATEGORY_COLOR_PALETTE.map((color) => (
+                        <button
+                          key={color}
+                          type="button"
+                          className="chip"
+                          aria-pressed={newCategorieColor === color}
+                          onClick={() => setNewCategorieColor(color)}
+                        >
+                          <span className="dot" style={{ "--c": `var(--${color})` } as CSSProperties} />
+                          {COLOR_NAMES[color]}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="wrap" style={{ justifyContent: "flex-end" }}>
+                    <Button variant="secondary" size="sm" type="button" onClick={() => setCreatingCategorie(false)}>
+                      Annuler
+                    </Button>
+                    <Button size="sm" type="button" onClick={createCategorie} disabled={categorieSubmitting}>
+                      Créer la catégorie
+                    </Button>
+                  </div>
+                </form>
+              ) : (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  type="button"
+                  style={{ alignSelf: "flex-start", marginTop: "var(--space-2)" }}
+                  onClick={() => setCreatingCategorie(true)}
+                >
+                  <IconPlus />
+                  Nouvelle catégorie
+                </Button>
+              )}
             </div>
             <div className="wrap" style={{ flexWrap: "nowrap" }}>
               <Button variant="secondary" onClick={() => setStep(1)}>
@@ -261,7 +402,7 @@ export function PremierLancementWizard({ categories }: { categories: CategoryOpt
                       key={c.id}
                       type="button"
                       className="chip"
-                      aria-pressed={ligneCategoryId === c.id}
+                      aria-pressed={ligneCategoryIdValide === c.id}
                       onClick={() => setLigneCategoryId(c.id)}
                     >
                       <span className="dot" style={{ "--c": `var(--${c.color})` } as CSSProperties} />
