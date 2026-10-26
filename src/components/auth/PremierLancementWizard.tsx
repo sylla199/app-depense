@@ -47,14 +47,11 @@ export function PremierLancementWizard({ categories }: { categories: CategoryOpt
   }
 
   const totalMontant = categories.reduce((sum, c) => sum + montantCategorie(c), 0);
-  const scaleBarres = totalMontant > revenu && revenu > 0 ? revenu / totalMontant : 1;
-  const totalMessage =
-    totalMontant === revenu
-      ? `Total : ${formatFcfa(revenu)}. Chaque franc est affecté.`
-      : totalMontant < revenu
-        ? `Il reste ${formatFcfa(revenu - totalMontant)} à répartir.`
-        : `Tu dépasses de ${formatFcfa(totalMontant - revenu)}.`;
-  const totalClass = totalMontant === revenu ? "t-income" : totalMontant > revenu ? "t-over" : "t-ink";
+  const reste = revenu - totalMontant;
+  const pctAlloue = revenu > 0 ? Math.round((totalMontant / revenu) * 100) : 0;
+  const meterCls = reste < 0 ? "over" : reste === 0 ? "ok" : "";
+  const resteLabel = reste === 0 ? "Chaque franc est affecté" : reste > 0 ? "Reste à répartir" : "Dépassement";
+  const resteCouleur = reste < 0 ? "var(--over)" : reste === 0 ? "var(--income)" : "var(--ink)";
 
   async function onFinish() {
     setErrors({});
@@ -147,19 +144,22 @@ export function PremierLancementWizard({ categories }: { categories: CategoryOpt
                 chaque montant plus tard, ligne par ligne.
               </p>
             </div>
-            <div className="card stack" style={{ gap: "var(--space-4)" }}>
-              <div
-                className="seg"
-                role="img"
-                aria-label={`Répartition : ${categories.map((c) => `${pctCategorie(c)} % ${c.name.toLowerCase()}`).join(", ")}`}
-              >
-                {categories.map((c) => (
-                  <span
-                    key={c.id}
-                    style={{ width: `${pctCategorie(c) * scaleBarres}%`, "--c": `var(--${c.color})` } as CSSProperties}
-                  />
-                ))}
+            <div className="card stack" style={{ gap: "var(--space-2)" }}>
+              <div className="label">{resteLabel}</div>
+              <div className="t-xl" style={{ color: resteCouleur }}>
+                {formatFcfa(Math.abs(reste))}
               </div>
+              <div
+                className={`meter ${meterCls}`}
+                role="img"
+                aria-label={`${pctAlloue} % du revenu réparti`}
+              >
+                <span style={{ width: `${Math.min(100, pctAlloue)}%` }} />
+              </div>
+              <div className="caption" style={{ marginBottom: "var(--space-2)" }}>
+                {pctAlloue} % réparti · revenu du mois : {formatFcfa(revenu)}
+              </div>
+
               <div className="stack" style={{ gap: "var(--space-3)" }}>
                 {categories.map((c) => (
                   <div key={c.id} className="sim-row" style={{ gridTemplateColumns: "auto minmax(0,1fr) 44px 130px" }}>
@@ -184,9 +184,6 @@ export function PremierLancementWizard({ categories }: { categories: CategoryOpt
                     />
                   </div>
                 ))}
-              </div>
-              <div className={`caption ${totalClass}`} role="status" aria-live="polite">
-                {totalMessage}
               </div>
             </div>
             <div className="wrap" style={{ flexWrap: "nowrap" }}>
