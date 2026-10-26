@@ -29,24 +29,32 @@ export function PremierLancementWizard({ categories }: { categories: CategoryOpt
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [revenu, setRevenu] = useState(0);
-  const [percents, setPercents] = useState<Record<string, number>>(() =>
-    Object.fromEntries(categories.map((c) => [c.id, c.defaultPercent]))
-  );
+  // Seules les catégories dont le montant a été modifié à la main sont
+  // retenues ici ; les autres suivent la proposition par défaut (% du
+  // revenu) et se réajustent automatiquement si le revenu change à l'étape 1.
+  const [montantsEdites, setMontantsEdites] = useState<Record<string, number>>({});
   const [ligneName, setLigneName] = useState("");
   const [lignePlanned, setLignePlanned] = useState(0);
   const [ligneCategoryId, setLigneCategoryId] = useState(categories[0]?.id ?? "");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
 
-  const totalPercent = Object.values(percents).reduce((sum, p) => sum + p, 0);
-  const percentScale = totalPercent > 100 ? 100 / totalPercent : 1;
+  function montantCategorie(c: CategoryOption): number {
+    return montantsEdites[c.id] ?? montantProposeCategorie(revenu, c.defaultPercent);
+  }
+  function pctCategorie(c: CategoryOption): number {
+    return revenu > 0 ? Math.round((montantCategorie(c) / revenu) * 100) : 0;
+  }
+
+  const totalMontant = categories.reduce((sum, c) => sum + montantCategorie(c), 0);
+  const scaleBarres = totalMontant > revenu && revenu > 0 ? revenu / totalMontant : 1;
   const totalMessage =
-    totalPercent === 100
-      ? "Total : 100 %. Chaque franc est affecté."
-      : totalPercent < 100
-        ? `Il reste ${100 - totalPercent} % à répartir.`
-        : `Tu dépasses de ${totalPercent - 100} %.`;
-  const totalClass = totalPercent === 100 ? "t-income" : totalPercent > 100 ? "t-over" : "t-ink";
+    totalMontant === revenu
+      ? `Total : ${formatFcfa(revenu)}. Chaque franc est affecté.`
+      : totalMontant < revenu
+        ? `Il reste ${formatFcfa(revenu - totalMontant)} à répartir.`
+        : `Tu dépasses de ${formatFcfa(totalMontant - revenu)}.`;
+  const totalClass = totalMontant === revenu ? "t-income" : totalMontant > revenu ? "t-over" : "t-ink";
 
   async function onFinish() {
     setErrors({});
@@ -143,33 +151,37 @@ export function PremierLancementWizard({ categories }: { categories: CategoryOpt
               <div
                 className="seg"
                 role="img"
-                aria-label={`Répartition : ${categories.map((c) => `${percents[c.id] ?? 0} % ${c.name.toLowerCase()}`).join(", ")}`}
+                aria-label={`Répartition : ${categories.map((c) => `${pctCategorie(c)} % ${c.name.toLowerCase()}`).join(", ")}`}
               >
                 {categories.map((c) => (
                   <span
                     key={c.id}
-                    style={{ width: `${(percents[c.id] ?? 0) * percentScale}%`, "--c": `var(--${c.color})` } as CSSProperties}
+                    style={{ width: `${pctCategorie(c) * scaleBarres}%`, "--c": `var(--${c.color})` } as CSSProperties}
                   />
                 ))}
               </div>
               <div className="stack" style={{ gap: "var(--space-3)" }}>
                 {categories.map((c) => (
-                  <div key={c.id} className="sim-row">
+                  <div key={c.id} className="sim-row" style={{ gridTemplateColumns: "auto minmax(0,1fr) 44px 130px" }}>
                     <span className="dot" style={{ "--c": `var(--${c.color})` } as CSSProperties} />
-                    <label htmlFor={`onb-pct-${c.id}`}>{c.name}</label>
+                    <label htmlFor={`onb-montant-${c.id}`}>{c.name}</label>
+                    <span className="caption" style={{ textAlign: "right" }}>
+                      {pctCategorie(c)} %
+                    </span>
                     <input
-                      id={`onb-pct-${c.id}`}
+                      id={`onb-montant-${c.id}`}
                       className="pct-input"
+                      style={{ width: 130, textAlign: "right" }}
                       type="text"
                       inputMode="numeric"
                       autoComplete="off"
-                      value={percents[c.id] ?? 0}
+                      value={montantCategorie(c) ? formatMontant(montantCategorie(c)) : ""}
+                      placeholder="0"
                       onChange={(e) =>
-                        setPercents((prev) => ({ ...prev, [c.id]: Math.min(100, digitsOnly(e.target.value, 3)) }))
+                        setMontantsEdites((prev) => ({ ...prev, [c.id]: digitsOnly(e.target.value) }))
                       }
-                      aria-label={`${c.name}, en pourcentage`}
+                      aria-label={`${c.name}, montant en FCFA`}
                     />
-                    <span className="row-amount amt">{formatFcfa(montantProposeCategorie(revenu, percents[c.id] ?? 0))}</span>
                   </div>
                 ))}
               </div>
