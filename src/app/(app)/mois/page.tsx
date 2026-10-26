@@ -21,20 +21,30 @@ import { contributionsAccumulees, epargnePourProjet, progression, totalProjet } 
 import { moisEcoulesDepuis } from "@/lib/month";
 import { formatMoisEnLettres } from "@/lib/format";
 import { MoisDashboard } from "@/components/mois/MoisDashboard";
+import { MonthSwitchDropdown, type MonthOption } from "@/components/mois/MonthSwitchDropdown";
 import { NetBanner } from "@/components/mois/NetBanner";
-import { IconChevronDown, IconHistorique, IconPlus } from "@/components/ui/Icons";
+import { IconHistorique, IconPlus } from "@/components/ui/Icons";
 
-export default async function MoisPage() {
+export default async function MoisPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ annee?: string; mois?: string }>;
+}) {
   const session = await getSession();
   if (!session) redirect("/connexion");
   const { userId } = session;
 
-  const moisCourant = await getOrCreateMoisCourant(userId);
-  const [mois, categories, revenueSources, savingsAccounts, projects] = await Promise.all([
-    db.month.findUnique({
-      where: { id: moisCourant.id },
-      include: { lines: { orderBy: { order: "asc" } } },
-    }),
+  const { year: anneeCourante, month: moisCourantNum } = anneeMoisCourants();
+  const { annee: anneeParam, mois: moisParam } = await searchParams;
+  const anneeDemandee = anneeParam ? parseInt(anneeParam, 10) : anneeCourante;
+  const moisDemande = moisParam ? parseInt(moisParam, 10) : moisCourantNum;
+  const estMoisCourant = anneeDemandee === anneeCourante && moisDemande === moisCourantNum;
+
+  const [moisCourantRow, categories, revenueSources, savingsAccounts, projects, tousLesMois] = await Promise.all([
+    // Toujours résolu (et créé si besoin) : sert à la fois pour le mois en
+    // cours lui-même, et de filet de sécurité si le mois demandé en
+    // paramètre n'existe pas (ex. lien copié avant suppression du compte).
+    getOrCreateMoisCourant(userId),
     db.category.findMany({ where: { userId }, orderBy: { order: "asc" } }),
     db.revenueSource.findMany({ where: { userId } }),
     db.savingsAccount.findMany({ where: { userId } }),
@@ -44,9 +54,35 @@ export default async function MoisPage() {
       orderBy: { createdAt: "asc" },
       take: 2,
     }),
+    db.month.findMany({
+      where: { userId },
+      orderBy: [{ year: "desc" }, { month: "desc" }],
+      select: { id: true, year: true, month: true },
+    }),
   ]);
 
-  if (!mois) redirect("/premier-lancement");
+  const mois = estMoisCourant
+    ? await db.month.findUnique({
+        where: { id: moisCourantRow.id },
+        include: { lines: { orderBy: { order: "asc" } } },
+      })
+    : await db.month.findFirst({
+        where: { userId, year: anneeDemandee, month: moisDemande },
+        include: { lines: { orderBy: { order: "asc" } } },
+      });
+
+  // Mois demandé via l'URL mais inexistant (lien périmé, paramètre modifié
+  // à la main) : retombe silencieusement sur le mois en cours plutôt que
+  // d'afficher une page cassée.
+  if (!mois) redirect("/mois");
+
+  const moisOptions: MonthOption[] = tousLesMois.map((m) => ({
+    id: m.id,
+    year: m.year,
+    month: m.month,
+    label: formatMoisEnLettres(m.year, m.month),
+    current: m.year === anneeCourante && m.month === moisCourantNum,
+  }));
 
   const lines: LineLike[] = mois.lines.map((l) => ({
     categoryId: l.categoryId,
@@ -56,7 +92,11 @@ export default async function MoisPage() {
   }));
   const categoriesLike: CategoryLike[] = categories.map((c) => ({ id: c.id, kind: c.kind }));
 
-  const revenu = revenuDuMois(revenueSources);
+  // Mois en cours : revenu en direct (reflète immédiatement un ajout de
+  // source). Mois passé : revenu figé au moment où ce mois a été créé
+  // (`revenueSnapshot`, même convention que l'écran Historique) — modifier
+  // ses sources de revenu aujourd'hui ne doit pas réécrire le passé.
+  const revenu = estMoisCourant ? revenuDuMois(revenueSources) : (mois.revenueSnapshot ?? revenuDuMois(revenueSources));
   const affecte = totalAffecte(lines);
   const depense = totalDepense(lines, categoriesLike);
   const restant = revenu - affecte;
@@ -76,35 +116,38 @@ export default async function MoisPage() {
     return { id: p.id, name: p.name, total, progression: progression(epargne, total) };
   });
 
+  // "Jours restants dans le mois" n'a de sens que pour le mois en cours
+  // (celui qu'on est en train de vivre) : pour un mois passé, 0 — masque
+  // naturellement la carte "Argent de poche" dans MoisDashboard, qui ne
+  // s'affiche déjà que si l'un des deux montants est non nul.
   const pocketCategory = categories.find((c) => c.kind === "POCKET");
   const pocketPrevu = totalCategorie(lines, pocketCategory?.id ?? "");
   const pocketDepense = totalCategorieDepense(lines, pocketCategory?.id ?? "");
-  const { year, month } = anneeMoisCourants();
-  const joursRestants = joursRestantsDansLeMois(year, month);
-  const resteParJour = argentPocheParJour(pocketPrevu, pocketDepense, joursRestants);
-  const resteParSemaine = argentPocheParSemaine(resteParJour);
+  const resteParJour = estMoisCourant
+    ? argentPocheParJour(pocketPrevu, pocketDepense, joursRestantsDansLeMois(anneeCourante, moisCourantNum))
+    : 0;
+  const resteParSemaine = estMoisCourant ? argentPocheParSemaine(resteParJour) : 0;
 
   const firstCategoryHref = `/categorie/${categories[0]?.id ?? ""}`;
+  const moisLabel = formatMoisEnLettres(anneeDemandee, moisDemande);
 
   return (
     <div className="stack" style={{ display: "flex", flexDirection: "column", gap: "var(--space-6)" }}>
+      <h1 className="sr">Mois — {moisLabel}</h1>
       <div className="screen-head">
-        <Link className="month-switch" href="/historique" aria-label={`Changer de mois, ${formatMoisEnLettres(year, month)}`}>
-          <h1 className="m-label" style={{ margin: 0, minWidth: 0 }}>
-            {formatMoisEnLettres(year, month)}
-          </h1>
-          <IconChevronDown />
-        </Link>
+        <MonthSwitchDropdown label={moisLabel} options={moisOptions} />
         {mois.lines.length > 0 ? (
           <div className="head-actions">
             <Link className="btn btn-secondary btn-sm" href="/historique">
               <IconHistorique />
               Historique
             </Link>
-            <Link className="btn btn-primary btn-sm hide-mobile" href={firstCategoryHref}>
-              <IconPlus />
-              Ajouter une ligne
-            </Link>
+            {estMoisCourant ? (
+              <Link className="btn btn-primary btn-sm hide-mobile" href={firstCategoryHref}>
+                <IconPlus />
+                Ajouter une ligne
+              </Link>
+            ) : null}
           </div>
         ) : null}
       </div>
@@ -118,11 +161,19 @@ export default async function MoisPage() {
           </div>
           <div style={{ font: "600 20px/28px var(--font-sans)" }}>Ce mois est encore vide</div>
           <p className="muted" style={{ margin: 0, maxWidth: "42ch" }}>
-            Ajoute ta première ligne pour voir ton restant et ta projection d&apos;épargne.
+            {estMoisCourant
+              ? "Ajoute ta première ligne pour voir ton restant et ta projection d'épargne."
+              : "Aucune ligne n'a été enregistrée ce mois-là."}
           </p>
-          <Link className="btn btn-primary" href={firstCategoryHref}>
-            Ajouter une première ligne
-          </Link>
+          {estMoisCourant ? (
+            <Link className="btn btn-primary" href={firstCategoryHref}>
+              Ajouter une première ligne
+            </Link>
+          ) : (
+            <Link className="btn btn-secondary" href="/mois">
+              Revenir au mois en cours
+            </Link>
+          )}
         </div>
       ) : (
         <MoisDashboard
@@ -145,10 +196,11 @@ export default async function MoisPage() {
           epargneMensuelle={mensuelle}
           categorieHref={firstCategoryHref}
           ajoutHref={firstCategoryHref}
+          estMoisCourant={estMoisCourant}
         />
       )}
 
-      {projetsApercu.length > 0 ? (
+      {estMoisCourant && projetsApercu.length > 0 ? (
         <div className="card">
           <div className="sec-title">
             <p className="label" style={{ margin: 0 }}>

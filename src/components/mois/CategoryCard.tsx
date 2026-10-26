@@ -10,14 +10,18 @@ interface CategoryCardProps {
   total: number;
   part: number;
   lineCount: number;
+  /** Faux pour un mois passé : la carte n'ouvre pas `/categorie/[id]`, qui
+   *  n'affiche aujourd'hui que le mois en cours (verrait les mauvaises
+   *  lignes). Lecture seule, pas de lien. */
+  clickable?: boolean;
 }
 
 /** Carte de catégorie de la grille "Où va ton revenu" — fidèle à `Mois.dc.html`. */
-export function CategoryCard({ id, name, kind, total, part, lineCount }: CategoryCardProps) {
+export function CategoryCard({ id, name, kind, total, part, lineCount, clickable = true }: CategoryCardProps) {
   const cls = categoryClass(kind);
 
-  return (
-    <Link href={`/categorie/${id}`} className={`card stack link-row ${cls}`} style={{ textDecoration: "none", color: "inherit" }}>
+  const content = (
+    <>
       <div className="cat-head">
         <div className="row-icon">
           <CategoryIcon kind={kind} />
@@ -37,6 +41,16 @@ export function CategoryCard({ id, name, kind, total, part, lineCount }: Categor
         <span style={{ width: `${Math.min(100, part)}%`, minWidth: part > 0 ? "16px" : 0 }} />
       </div>
       <div className="caption">{part} % du revenu</div>
+    </>
+  );
+
+  if (!clickable) {
+    return <div className={`card stack ${cls}`}>{content}</div>;
+  }
+
+  return (
+    <Link href={`/categorie/${id}`} className={`card stack link-row ${cls}`} style={{ textDecoration: "none", color: "inherit" }}>
+      {content}
     </Link>
   );
 }

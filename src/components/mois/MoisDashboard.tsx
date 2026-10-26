@@ -30,6 +30,9 @@ interface DashboardProps {
   epargneMensuelle: number;
   categorieHref: string;
   ajoutHref: string;
+  /** Faux pour un mois passé consulté depuis le menu déroulant : lecture
+   *  seule, aucune action d'édition proposée (voir `mois/page.tsx`). */
+  estMoisCourant: boolean;
 }
 
 /**
@@ -50,9 +53,10 @@ export function MoisDashboard({
   epargneMensuelle,
   categorieHref,
   ajoutHref,
+  estMoisCourant,
 }: DashboardProps) {
   const [bannerOpen, setBannerOpen] = useState(true);
-  useFab({ label: "Ajouter une ligne", href: ajoutHref });
+  useFab(estMoisCourant ? { label: "Ajouter une ligne", href: ajoutHref } : null);
 
   const etat = etatMois(revenu, restant);
   const revenuManquant = etat === "revenu_manquant";
@@ -80,6 +84,20 @@ export function MoisDashboard({
 
   return (
     <>
+      {!estMoisCourant ? (
+        <div className="card" role="status" style={{ display: "flex", alignItems: "center", gap: "var(--space-3)", flexWrap: "wrap" }}>
+          <div className="row-main" style={{ minWidth: 200 }}>
+            <div className="row-title" style={{ whiteSpace: "normal" }}>
+              Tu consultes un mois passé, en lecture seule.
+            </div>
+            <div className="row-sub">Les montants ne peuvent plus être modifiés depuis cet écran.</div>
+          </div>
+          <Link className="btn btn-secondary btn-sm" href="/mois">
+            Revenir au mois en cours
+          </Link>
+        </div>
+      ) : null}
+
       {revenuManquant ? (
         <div className="card" style={{ display: "flex", alignItems: "center", gap: "var(--space-3)", flexWrap: "wrap" }}>
           <div className="row-main" style={{ minWidth: 200 }}>
@@ -88,9 +106,11 @@ export function MoisDashboard({
             </div>
             <div className="row-sub">Ajoute une source de revenu pour voir ton restant se calculer.</div>
           </div>
-          <Link className="btn btn-secondary btn-sm" href="/revenus">
-            Ajouter un revenu
-          </Link>
+          {estMoisCourant ? (
+            <Link className="btn btn-secondary btn-sm" href="/revenus">
+              Ajouter un revenu
+            </Link>
+          ) : null}
         </div>
       ) : null}
 
@@ -130,9 +150,11 @@ export function MoisDashboard({
             </div>
             <div className="row-sub">Retire ou réduis une ligne pour retrouver un restant à 0.</div>
           </div>
-          <Link className="btn btn-secondary btn-sm" href={categorieHref}>
-            Ajuster une ligne
-          </Link>
+          {estMoisCourant ? (
+            <Link className="btn btn-secondary btn-sm" href={categorieHref}>
+              Ajuster une ligne
+            </Link>
+          ) : null}
         </div>
       ) : null}
 
@@ -144,9 +166,11 @@ export function MoisDashboard({
             </div>
             <div className="row-sub">Tu peux les affecter à une ligne d&apos;épargne pour boucler le mois à 0.</div>
           </div>
-          <Link className="btn btn-secondary btn-sm" href="/epargne">
-            Affecter à l&apos;épargne
-          </Link>
+          {estMoisCourant ? (
+            <Link className="btn btn-secondary btn-sm" href={`/epargne?montant=${restant}`}>
+              Affecter à l&apos;épargne
+            </Link>
+          ) : null}
         </div>
       ) : null}
 
@@ -190,18 +214,20 @@ export function MoisDashboard({
               <Link className="link" href="/categories" style={{ minHeight: 44, display: "inline-flex", alignItems: "center" }}>
                 Gérer
               </Link>
-              <Link className="link" href={categorieHref} style={{ minHeight: 44, display: "inline-flex", alignItems: "center" }}>
-                Tout voir
-              </Link>
+              {estMoisCourant ? (
+                <Link className="link" href={categorieHref} style={{ minHeight: 44, display: "inline-flex", alignItems: "center" }}>
+                  Tout voir
+                </Link>
+              ) : null}
             </span>
           </div>
           <div className="cat-grid">
             {categories.map((c) => (
-              <CategoryCard key={c.id} {...c} />
+              <CategoryCard key={c.id} {...c} clickable={estMoisCourant} />
             ))}
           </div>
 
-          {resteParJour !== 0 || resteParSemaine !== 0 ? (
+          {estMoisCourant && (resteParJour !== 0 || resteParSemaine !== 0) ? (
             <div className="card stack" style={{ marginTop: "var(--space-4)" }}>
               <div className="label">Argent de poche</div>
               <div className="wrap" style={{ gap: "var(--space-6)" }}>
@@ -218,30 +244,32 @@ export function MoisDashboard({
           ) : null}
         </section>
 
-        <section className="a-proj">
-          <div className="card stack" style={{ ["--c" as string]: "var(--cat-savings)" }}>
-            <div className="label">Épargne dans 3 mois</div>
-            <div className="t-lg">{formatMontant(projection3)}&nbsp;FCFA</div>
-            <div className="caption">{formatFcfa(epargneMensuelle)} par mois, sur les comptes inclus dans la projection</div>
-            <div
-              className="proj"
-              style={{ height: 120 }}
-              role="img"
-              aria-label={`Épargne cumulée : ${projRows.map((r) => formatFcfa(r.value)).join(", ")}`}
-            >
-              {projRows.map((r) => (
-                <div className="proj-col" key={r.label}>
-                  <div className="proj-val">{formatMontant(r.value)}</div>
-                  <div className="proj-bar" style={{ height: `${Math.max(6, (r.value / maxProj) * 90)}px` }} />
-                  <div className="caption">{r.label.replace("Dans ", "")}</div>
-                </div>
-              ))}
+        {estMoisCourant ? (
+          <section className="a-proj">
+            <div className="card stack" style={{ ["--c" as string]: "var(--cat-savings)" }}>
+              <div className="label">Épargne dans 3 mois</div>
+              <div className="t-lg">{formatMontant(projection3)}&nbsp;FCFA</div>
+              <div className="caption">{formatFcfa(epargneMensuelle)} par mois, sur les comptes inclus dans la projection</div>
+              <div
+                className="proj"
+                style={{ height: 120 }}
+                role="img"
+                aria-label={`Épargne cumulée : ${projRows.map((r) => formatFcfa(r.value)).join(", ")}`}
+              >
+                {projRows.map((r) => (
+                  <div className="proj-col" key={r.label}>
+                    <div className="proj-val">{formatMontant(r.value)}</div>
+                    <div className="proj-bar" style={{ height: `${Math.max(6, (r.value / maxProj) * 90)}px` }} />
+                    <div className="caption">{r.label.replace("Dans ", "")}</div>
+                  </div>
+                ))}
+              </div>
+              <Link className="link" href="/epargne">
+                Voir la projection
+              </Link>
             </div>
-            <Link className="link" href="/epargne">
-              Voir la projection
-            </Link>
-          </div>
-        </section>
+          </section>
+        ) : null}
       </div>
     </>
   );

@@ -11,10 +11,18 @@ import {
 } from "@/lib/calculations";
 import { EpargneManager } from "@/components/epargne/EpargneManager";
 
-export default async function EpargnePage() {
+export default async function EpargnePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ montant?: string }>;
+}) {
   const session = await getSession();
   if (!session) redirect("/connexion");
   const { userId } = session;
+
+  const montantParam = (await searchParams).montant;
+  const initialMontant =
+    montantParam && /^\d+$/.test(montantParam) ? Number(montantParam) : undefined;
 
   const [accounts, mois, categories] = await Promise.all([
     db.savingsAccount.findMany({ where: { userId }, orderBy: { createdAt: "asc" } }),
@@ -53,6 +61,7 @@ export default async function EpargnePage() {
       epargneMensuelle={mensuelle}
       fondsUrgenceMois={urgence}
       totalDepense={depense}
+      initialMontant={initialMontant}
     />
   );
 }

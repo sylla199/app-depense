@@ -27,18 +27,20 @@ export function EpargneManager({
   epargneMensuelle,
   fondsUrgenceMois,
   totalDepense,
+  initialMontant,
 }: {
   accounts: Account[];
   epargneMensuelle: number;
   fondsUrgenceMois: number;
   totalDepense: number;
+  initialMontant?: number;
 }) {
   const router = useRouter();
   const [horizon, setHorizon] = useState(3);
   const [view, setView] = useState<"chart" | "table">("chart");
-  const [adding, setAdding] = useState(false);
+  const [adding, setAdding] = useState(() => Boolean(initialMontant));
   const [name, setName] = useState("");
-  const [balance, setBalance] = useState<number | "">("");
+  const [balance, setBalance] = useState<number | "">(() => initialMontant ?? "");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [soldeDrafts, setSoldeDrafts] = useState<Record<string, number>>({});
@@ -296,6 +298,11 @@ export function EpargneManager({
               <h3 id="nf-t" className="screen-title" style={{ margin: 0, fontSize: 18 }}>
                 Nouveau compte d&apos;épargne
               </h3>
+              {initialMontant ? (
+                <div className="caption">
+                  Montant repris du restant de ton mois ({formatMontant(initialMontant)}&nbsp;FCFA) — modifie-le si besoin.
+                </div>
+              ) : null}
               <Field label="Nom du compte" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex. Tontine" error={error} />
               <Field
                 label="Solde actuel, en FCFA"
