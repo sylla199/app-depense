@@ -4,16 +4,20 @@
 // (SavingsAccount, Project, ProjectItem, Achievement) existent déjà pour
 // éviter une migration de schéma lors des prochains jalons.
 //
-// Dev : SQLite (zéro dépendance externe). Prod : changer `provider` en
-// "postgresql" et `DATABASE_URL` — le reste du schéma ne change pas.
+// Prod (Supabase + Vercel) : `provider = "postgresql"`, `DATABASE_URL` sur le
+// pooler Supabase (port 6543, pgbouncer — Vercel ouvre beaucoup de connexions
+// courtes) et `DIRECT_URL` sur la connexion directe (port 5432, utilisée par
+// `prisma migrate deploy`, qui a besoin d'une vraie connexion, pas d'un pool).
+// Les deux URLs sont données dans Supabase : Project Settings → Database.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 enum MonthState {
