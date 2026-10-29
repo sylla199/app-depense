@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
+import { Modal } from "@/components/ui/Modal";
 import { Switch } from "@/components/ui/Switch";
 import { IconCheck, IconEpargne, IconPlus } from "@/components/ui/Icons";
 import { projection } from "@/lib/calculations";
@@ -294,10 +295,7 @@ export function EpargneManager({
           )}
 
           {adding ? (
-            <form className="inline-form" onSubmit={(e) => e.preventDefault()} aria-labelledby="nf-t">
-              <h3 id="nf-t" className="screen-title" style={{ margin: 0, fontSize: 18 }}>
-                Nouveau compte d&apos;épargne
-              </h3>
+            <Modal title="Nouveau compte d'épargne" onClose={() => setAdding(false)}>
               {initialMontant ? (
                 <div className="caption">
                   Montant repris du restant de ton mois ({formatMontant(initialMontant)}&nbsp;FCFA) — modifie-le si besoin.
@@ -312,7 +310,7 @@ export function EpargneManager({
                 value={balance}
                 onChange={(e) => setBalance(e.target.value === "" ? "" : Number(e.target.value))}
               />
-              <div className="wrap" style={{ justifyContent: "flex-end" }}>
+              <div className="wrap" style={{ marginTop: "var(--space-4)", justifyContent: "flex-end" }}>
                 <Button variant="secondary" size="sm" type="button" onClick={() => setAdding(false)}>
                   Annuler
                 </Button>
@@ -320,7 +318,7 @@ export function EpargneManager({
                   Ajouter
                 </Button>
               </div>
-            </form>
+            </Modal>
           ) : null}
 
           <div className="caption" aria-live="polite">
